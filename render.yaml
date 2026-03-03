@@ -1,0 +1,58 @@
+services:
+  # ─── Express API ─────────────────────────────────────────────────────────────
+  - type: web
+    name: restaurant-api
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: .
+    buildCommand: npm install -g pnpm@9 && pnpm install --frozen-lockfile && pnpm --filter api build
+    startCommand: node apps/api/dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: restaurant-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: restaurant-redis
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      # ⚠ Set to your Vercel URL after first deploy (e.g. https://xxx.vercel.app)
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DATABASE_POOL_SIZE
+        value: 5
+      - key: TABLE_SESSION_TTL_HOURS
+        value: 4
+      # ⚠ Set these manually in Render dashboard
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  - type: redis
+    name: restaurant-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []   # open to all — API connects via internal network
+
+# ─── PostgreSQL ───────────────────────────────────────────────────────────────
+databases:
+  - name: restaurant-db
+    databaseName: restaurant_db
+    user: restaurant_user
+    plan: free
+    region: frankfurt
