@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "Restaurant Orders"
+  },
+  "nav": {
+    "menu": "Menu",
+    "cart": "Cart",
+    "orders": "Orders",
+    "admin": "Administration"
+  },
+  "menu": {
+    "title": "Our Menu",
+    "popular": "Popular",
+    "addToCart": "Add",
+    "unavailable": "Unavailable",
+    "noItems": "No items available"
+  },
+  "cart": {
+    "title": "My Cart",
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "placeOrder": "Place Order",
+    "notes": "Notes (allergies, preferences...)",
+    "phone": "Phone number (optional)"
+  },
+  "order": {
+    "title": "Order",
+    "status": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "PREPARING": "Preparing",
+      "READY": "Ready",
+      "SERVED": "Served",
+      "CANCELLED": "Cancelled"
+    },
+    "trackOrder": "Track my order",
+    "downloadReceipt": "Download receipt"
+  },
+  "payment": {
+    "title": "Payment",
+    "cash": "Cash",
+    "mtn": "MTN Mobile Money",
+    "orange": "Orange Money",
+    "phone": "Mobile Money number",
+    "pay": "Pay",
+    "success": "Payment confirmed!",
+    "pending": "Awaiting confirmation",
+    "failed": "Payment failed"
+  },
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "logout": "Logout"
+  },
+  "staff": {
+    "title": "Dashboard",
+    "orders": "Orders",
+    "newOrder": "New order!",
+    "confirm": "Confirm",
+    "prepare": "Preparing",
+    "ready": "Ready",
+    "serve": "Serve",
+    "cancel": "Cancel"
+  },
+  "admin": {
+    "title": "Administration",
+    "menu": "Menu",
+    "tables": "Tables",
+    "orders": "Orders",
+    "settings": "Settings",
+    "stats": "Statistics"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "notFound": "Page not found",
+    "sessionExpired": "Session expired, please scan the QR code again"
+  },
+  "offline": "You are offline. Some features may be limited."
+}

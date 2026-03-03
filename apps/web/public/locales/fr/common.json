@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "Restaurant Commandes"
+  },
+  "nav": {
+    "menu": "Menu",
+    "cart": "Panier",
+    "orders": "Commandes",
+    "admin": "Administration"
+  },
+  "menu": {
+    "title": "Notre Menu",
+    "popular": "Populaire",
+    "addToCart": "Ajouter",
+    "unavailable": "Indisponible",
+    "noItems": "Aucun article disponible"
+  },
+  "cart": {
+    "title": "Mon Panier",
+    "empty": "Votre panier est vide",
+    "total": "Total",
+    "subtotal": "Sous-total",
+    "tax": "TVA",
+    "placeOrder": "Passer la commande",
+    "notes": "Notes (allergies, préférences...)",
+    "phone": "Numéro de téléphone (optionnel)"
+  },
+  "order": {
+    "title": "Commande",
+    "status": {
+      "PENDING": "En attente",
+      "CONFIRMED": "Confirmée",
+      "PREPARING": "En préparation",
+      "READY": "Prête",
+      "SERVED": "Servie",
+      "CANCELLED": "Annulée"
+    },
+    "trackOrder": "Suivre ma commande",
+    "downloadReceipt": "Télécharger le reçu"
+  },
+  "payment": {
+    "title": "Paiement",
+    "cash": "Espèces",
+    "mtn": "MTN Mobile Money",
+    "orange": "Orange Money",
+    "phone": "Numéro Mobile Money",
+    "pay": "Payer",
+    "success": "Paiement confirmé !",
+    "pending": "En attente de confirmation",
+    "failed": "Paiement échoué"
+  },
+  "auth": {
+    "login": "Connexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "logout": "Déconnexion"
+  },
+  "staff": {
+    "title": "Tableau de bord",
+    "orders": "Commandes",
+    "newOrder": "Nouvelle commande !",
+    "confirm": "Confirmer",
+    "prepare": "En préparation",
+    "ready": "Prête",
+    "serve": "Servir",
+    "cancel": "Annuler"
+  },
+  "admin": {
+    "title": "Administration",
+    "menu": "Menu",
+    "tables": "Tables",
+    "orders": "Commandes",
+    "settings": "Paramètres",
+    "stats": "Statistiques"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue",
+    "notFound": "Page introuvable",
+    "sessionExpired": "Session expirée, veuillez rescanner le QR code"
+  },
+  "offline": "Vous êtes hors ligne. Certaines fonctionnalités peuvent être limitées."
+}

@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING_VERIFICATION
+  PAID
+  FAILED
+}
+
+enum PaymentMethod {
+  CASH
+  MTN_MOBILE_MONEY
+  ORANGE_MONEY
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Restaurant {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  address     String?
+  city        String?
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  currency    String   @default("XAF")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  settings    RestaurantSettings?
+  users       User[]
+  categories  Category[]
+  menuItems   MenuItem[]
+  tables      Table[]
+  orders      Order[]
+
+  @@map("restaurants")
+}
+
+model RestaurantSettings {
+  id                  String   @id @default(uuid())
+  restaurantId        String   @unique
+  mtnMoneyNumber      String?
+  orangeMoneyNumber   String?
+  enableMtnMoney      Boolean  @default(true)
+  enableOrangeMoney   Boolean  @default(true)
+  enableCash          Boolean  @default(true)
+  taxRate             Float    @default(0.1925) // 19.25% TVA Cameroun
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  restaurant          Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("restaurant_settings")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String
+  role           Role      @default(STAFF)
+  restaurantId   String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  restaurant     Restaurant?    @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  token      String    @unique
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])  // for cleanup queries
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id           String   @id @default(uuid())
+  restaurantId String
+  nameFr       String
+  nameEn       String
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+
+  @@index([restaurantId, isActive])
+  @@map("categories")
+}
+
+model MenuItem {
+  id             String   @id @default(uuid())
+  categoryId     String
+  restaurantId   String
+  nameFr         String
+  nameEn         String
+  descriptionFr  String?
+  descriptionEn  String?
+  price          Float
+  imageUrl       String?
+  isAvailable    Boolean  @default(true)
+  isPopular      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category       Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems     OrderItem[]
+
+  @@index([restaurantId, isAvailable])
+  @@index([categoryId])
+  @@map("menu_items")
+}
+
+model Table {
+  id           String      @id @default(uuid())
+  restaurantId String
+  number       Int
+  label        String
+  capacity     Int         @default(4)
+  status       TableStatus @default(AVAILABLE)
+  qrToken      String      @unique @default(uuid())
+  qrCodeUrl    String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  sessions     TableSession[]
+
+  @@unique([restaurantId, number])
+  @@map("tables")
+}
+
+model TableSession {
+  id             String   @id @default(uuid())
+  tableId        String
+  sessionToken   String   @unique @default(uuid())
+  customerPhone  String?
+  isActive       Boolean  @default(true)
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  table          Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  orders         Order[]
+
+  @@index([tableId, isActive])
+  @@index([expiresAt])          // for cleanup queries
+  @@map("table_sessions")
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  orderNumber    String      @unique
+  tableSessionId String
+  restaurantId   String
+  status         OrderStatus @default(PENDING)
+  subtotal       Float
+  taxAmount      Float       @default(0)
+  totalAmount    Float
+  notes          String?
+  customerPhone  String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  tableSession   TableSession @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items          OrderItem[]
+  payment        Payment?
+
+  @@index([restaurantId, createdAt(sort: Desc)])  // staff kanban — list orders by restaurant
+  @@index([restaurantId, status])                 // filter by status
+  @@index([customerPhone])                        // order history lookup by phone
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String   @id @default(uuid())
+  orderId      String
+  menuItemId   String
+  quantity     Int
+  unitPrice    Float
+  itemNameFr   String
+  itemNameEn   String
+  createdAt    DateTime @default(now())
+
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id                  String        @id @default(uuid())
+  orderId             String        @unique
+  method              PaymentMethod
+  status              PaymentStatus @default(UNPAID)
+  amount              Float
+  mobileMoneyPhone    String?
+  transactionRef      String?
+  confirmedAt         DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  order               Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
