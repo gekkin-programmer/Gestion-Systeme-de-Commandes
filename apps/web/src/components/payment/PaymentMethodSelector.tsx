@@ -39,7 +39,6 @@ const options: {
         </span>
       </div>
     ),
-    enabled: true,
   },
   {
     method:  PAYMENT_METHOD.MTN_MOBILE_MONEY,
