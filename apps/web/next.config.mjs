@@ -42,8 +42,8 @@ const securityHeaders = [
       "object-src 'none'",
       // Restrict frames
       "frame-ancestors 'none'",
-      // Upgrade HTTP to HTTPS in production
-      ...(process.env.NODE_ENV === 'production' ? ['upgrade-insecure-requests'] : []),
+      // upgrade-insecure-requests: only enable when SSL is configured
+      // ...(process.env.NODE_ENV === 'production' ? ['upgrade-insecure-requests'] : []),
     ].join('; '),
   },
 ];
