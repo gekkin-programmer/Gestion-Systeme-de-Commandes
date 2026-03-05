@@ -3,6 +3,7 @@ import * as ctrl from '../controllers/restaurant.controller';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
 import { requireRestaurantAccess } from '../middleware/requireRestaurantAccess';
+import { upload } from '../middleware/upload';
 
 const router = Router();
 
@@ -25,6 +26,14 @@ router.patch(
   requireRole('ADMIN', 'SUPER_ADMIN'),
   requireRestaurantAccess('id'),
   ctrl.updateSettings,
+);
+router.post(
+  '/:id/logo',
+  authenticate,
+  requireRole('ADMIN', 'SUPER_ADMIN'),
+  requireRestaurantAccess('id'),
+  upload.single('logo'),
+  ctrl.uploadLogo,
 );
 router.get(
   '/:id/stats/today',

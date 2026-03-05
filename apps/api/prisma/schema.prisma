@@ -78,6 +78,7 @@ model RestaurantSettings {
   enableOrangeMoney   Boolean  @default(true)
   enableCash          Boolean  @default(true)
   taxRate             Float    @default(0.1925) // 19.25% TVA Cameroun
+  themePreset         String   @default("DARK_GOLD") // DARK_GOLD | WHITE_PURPLE | WHITE_RED
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

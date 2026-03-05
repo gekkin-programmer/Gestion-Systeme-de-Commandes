@@ -531,3 +531,167 @@
   .main { padding: 24px 16px 120px; }
   .header { padding: 0 16px; }
 }
+
+/* ─── Toast notification ──────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 9999;
+  min-width: 280px;
+  max-width: 90vw;
+  padding: 14px 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Jost', sans-serif;
+  font-size: 13px;
+  color: var(--cream);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: toastIn 0.3s ease forwards;
+}
+
+.toastExiting {
+  animation: toastOut 0.3s ease forwards;
+}
+
+.toastDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(-50%) translateY(0); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(20px); }
+}
+
+/* ─── Tab bar ─────────────────────────────────── */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.tab {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--cream); }
+
+.tabActive {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+/* ─── Summary strip ───────────────────────────── */
+.summaryStrip {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.summaryCell {
+  flex: 1;
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+  text-align: center;
+}
+.summaryCell:last-child { border-right: none; }
+
+.summaryCellLabel {
+  font-family: 'Jost', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.summaryCellValue {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  color: var(--gold);
+}
+
+/* ─── History list row ────────────────────────── */
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  cursor: default;
+  transition: background 0.15s;
+}
+.historyRow:last-child { border-bottom: none; }
+.historyRow:hover { background: rgba(255,255,255,0.02); }
+
+/* ─── Occupancy grid ──────────────────────────── */
+.occupancyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.occupancyCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 16px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.occupancyCardOccupied {
+  border-color: rgba(200,169,110,0.4);
+}
+
+.occupancyStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.occupancyTableNum {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  color: var(--cream);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.occupancyTableLabel {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  color: var(--cream-dim);
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

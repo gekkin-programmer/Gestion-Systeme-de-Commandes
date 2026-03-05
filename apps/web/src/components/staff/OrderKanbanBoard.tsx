@@ -24,11 +24,12 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
 };
 
 interface OrderKanbanBoardProps {
-  orders: OrderDTO[];
+  orders:         OrderDTO[];
   onStatusChange: (orderId: string, status: string) => Promise<void>;
+  pendingIds?:    Set<string>;
 }
 
-export function OrderKanbanBoard({ orders, onStatusChange }: OrderKanbanBoardProps) {
+export function OrderKanbanBoard({ orders, onStatusChange, pendingIds }: OrderKanbanBoardProps) {
   const t      = useTranslations('order.status');
   const locale = useLocale();
 
@@ -58,6 +59,9 @@ export function OrderKanbanBoard({ orders, onStatusChange }: OrderKanbanBoardPro
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--cream)', textTransform: 'uppercase' }}>
                         {order.orderNumber}
+                        {pendingIds?.has(order.id) && (
+                          <span title="Sync en attente" style={{ marginLeft: 6, fontSize: 10, color: '#d4a04a' }}>⏳</span>
+                        )}
                       </span>
                       <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--cream-dim)' }}>
                         {new Date(order.createdAt).toLocaleTimeString(

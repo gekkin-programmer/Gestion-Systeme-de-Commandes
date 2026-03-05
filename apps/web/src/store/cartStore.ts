@@ -2,12 +2,24 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem } from '@/types';
 
+export interface PendingOrder {
+  items: CartItem[];
+  sessionToken: string;
+  notes: string;
+  customerPhone: string;
+  paymentMethod: string;
+  isMobileMoney: boolean;
+  queuedAt: string;
+}
+
 interface CartState {
   items: CartItem[];
   sessionToken: string | null;
   restaurantSlug: string | null;
   notes: string;
   customerPhone: string;
+  pendingOrder: PendingOrder | null;
+  isSyncing: boolean;
 
   addItem: (item: CartItem) => void;
   removeItem: (menuItemId: string) => void;
@@ -18,6 +30,9 @@ interface CartState {
   setCustomerPhone: (phone: string) => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
+  setPendingOrder: (order: PendingOrder) => void;
+  clearPendingOrder: () => void;
+  setIsSyncing: (v: boolean) => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -28,6 +43,8 @@ export const useCartStore = create<CartState>()(
       restaurantSlug: null,
       notes: '',
       customerPhone: '',
+      pendingOrder: null,
+      isSyncing: false,
 
       addItem: (newItem) => {
         set((state) => {
@@ -70,6 +87,10 @@ export const useCartStore = create<CartState>()(
 
       getSubtotal: () =>
         get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+
+      setPendingOrder: (order) => set({ pendingOrder: order }),
+      clearPendingOrder: () => set({ pendingOrder: null }),
+      setIsSyncing: (v) => set({ isSyncing: v }),
     }),
     {
       name: 'cart-storage',
@@ -79,6 +100,7 @@ export const useCartStore = create<CartState>()(
         restaurantSlug: state.restaurantSlug,
         notes: state.notes,
         customerPhone: state.customerPhone,
+        pendingOrder: state.pendingOrder,
       }),
     },
   ),

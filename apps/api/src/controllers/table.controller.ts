@@ -4,6 +4,49 @@ import { CreateTableSchema } from '@repo/shared';
 import { generateQRCodeDataUrl, buildMenuUrl } from '../services/qrcode.service';
 import { env } from '../config/env';
 
+export async function getOccupancy(req: Request, res: Response): Promise<void> {
+  const tables = await prisma.table.findMany({
+    where: { restaurantId: req.params.restaurantId },
+    orderBy: { number: 'asc' },
+    include: {
+      sessions: {
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        include: {
+          orders: {
+            where: { status: { notIn: ['CANCELLED'] } },
+            include: { payment: true },
+          },
+        },
+      },
+    },
+  });
+
+  const data = tables.map((table) => {
+    const { sessions, ...tableData } = table;
+    const session = sessions[0] ?? null;
+    const orders  = session?.orders ?? [];
+    return {
+      ...tableData,
+      occupancy: session
+        ? {
+            sessionId:    session.id,
+            createdAt:    session.createdAt,
+            expiresAt:    session.expiresAt,
+            ordersCount:  orders.length,
+            totalAmount:  orders.reduce((s, o) => s + o.totalAmount, 0),
+            unpaidAmount: orders
+              .filter((o) => !o.payment || o.payment.status !== 'PAID')
+              .reduce((s, o) => s + o.totalAmount, 0),
+          }
+        : null,
+    };
+  });
+
+  res.json({ success: true, data });
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000';
 
 export async function listTables(req: Request, res: Response): Promise<void> {

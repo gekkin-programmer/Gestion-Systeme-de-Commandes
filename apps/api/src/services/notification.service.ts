@@ -34,3 +34,7 @@ export function emitPaymentStatusChanged(sessionId: string, payment: unknown): v
 export function emitMenuItemAvailabilityChanged(restaurantId: string, item: unknown): void {
   emitToRestaurant(restaurantId, SOCKET_EVENTS.MENU_ITEM_AVAILABILITY_CHANGED, item);
 }
+
+export function emitTableStatusChanged(restaurantId: string, table: unknown): void {
+  emitToRestaurant(restaurantId, SOCKET_EVENTS.TABLE_STATUS_CHANGED, table);
+}

@@ -1,16 +1,20 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import { OrderKanbanBoard } from '@/components/staff/OrderKanbanBoard';
 import { BackButton } from '@/components/shared/BackButton';
 import { useAuth } from '@/hooks/useAuth';
-import { useOrders } from '@/hooks/useOrders';
+import { useOrders, useSyncStatusQueue } from '@/hooks/useOrders';
 import dk from '@/styles/dark.module.css';
 
 export default function AdminOrdersPage() {
-  const { user } = useAuth();
+  const locale       = useLocale();
+  const { user }     = useAuth();
   const restaurantId = user?.restaurantId ?? '';
-  const { orders, loading, fetchOrders, updateOrderStatus } = useOrders(restaurantId);
+  const { orders, loading, fetchOrders, updateOrderStatus, pendingIds } = useOrders(restaurantId);
+  useSyncStatusQueue(updateOrderStatus);
 
   useEffect(() => {
     if (restaurantId) fetchOrders();
@@ -25,7 +29,12 @@ export default function AdminOrdersPage() {
       <header className={dk.header}>
         <BackButton />
         <span className={dk.headerTitle}>Commandes en cours</span>
-        <div className={dk.headerRight}>
+        <div className={dk.headerRight} style={{ gap: 10 }}>
+          <Link href={`/${locale}/admin/orders/history`}>
+            <button className={dk.btnOutline} style={{ fontSize: 9, padding: '6px 14px' }}>
+              Historique
+            </button>
+          </Link>
           <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, color: 'var(--gold)', border: '1px solid var(--line)', padding: '3px 10px' }}>
             {activeOrders.length}
           </span>
@@ -41,6 +50,7 @@ export default function AdminOrdersPage() {
           <OrderKanbanBoard
             orders={activeOrders}
             onStatusChange={async (id, status) => { await updateOrderStatus(id, status); }}
+            pendingIds={pendingIds}
           />
         )}
       </main>

@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { OrderStatusStepper } from '@/components/order/OrderStatusStepper';
+import { Toast } from '@/components/shared/Toast';
 import { formatPrice } from '@/lib/utils';
 import api from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
 import { useSessionSocket } from '@/hooks/useSocket';
+import { useTheme } from '@/hooks/useTheme';
 import dk from '@/styles/dark.module.css';
 import type { OrderDTO } from '@/types';
 import type { OrderStatus } from '@repo/shared';
@@ -22,6 +24,14 @@ const STATUS_FR: Partial<Record<OrderStatus, string>> = {
   CANCELLED: 'Commande annulée',
 };
 
+const STATUS_TOAST: Partial<Record<OrderStatus, { msg: string; color: string }>> = {
+  CONFIRMED: { msg: 'Votre commande est confirmée ✓',         color: 'var(--gold)' },
+  PREPARING: { msg: 'Préparation en cours…',                  color: 'var(--gold)' },
+  READY:     { msg: 'Votre commande est prête !',             color: '#4ade80'     },
+  SERVED:    { msg: 'Bon appétit ! Merci pour votre visite.', color: '#4ade80'     },
+  CANCELLED: { msg: 'Commande annulée.',                      color: '#f87171'     },
+};
+
 interface OrderPageProps {
   params: { orderId: string; locale: string };
 }
@@ -30,9 +40,11 @@ export default function OrderPage({ params }: OrderPageProps) {
   const locale       = useLocale();
   const router       = useRouter();
   const sessionToken = useCartStore((s) => s.sessionToken);
+  const themeStyle   = useTheme();
 
   const [order,   setOrder]   = useState<OrderDTO | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toast,   setToast]   = useState<{ msg: string; color: string } | null>(null);
 
   useEffect(() => {
     api.get(`/orders/${params.orderId}/status`)
@@ -40,14 +52,17 @@ export default function OrderPage({ params }: OrderPageProps) {
       .finally(() => setLoading(false));
   }, [params.orderId]);
 
-  useSessionSocket(sessionToken, {
-    onOrderStatusChanged: (updated: unknown) => {
-      const o = updated as OrderDTO;
-      if (o.id === params.orderId) setOrder(o);
-    },
-  });
+  const handleStatusChanged = useCallback((updated: unknown) => {
+    const o = updated as OrderDTO;
+    if (o.id !== params.orderId) return;
+    setOrder(o);
+    const t = STATUS_TOAST[o.status as OrderStatus];
+    if (t) setToast(t);
+  }, [params.orderId]);
 
-  /* Polling fallback every 30s */
+  useSessionSocket(sessionToken, { onOrderStatusChanged: handleStatusChanged });
+
+  // Polling fallback every 30s
   useEffect(() => {
     const interval = setInterval(async () => {
       const { data } = await api.get(`/orders/${params.orderId}/status`);
@@ -56,16 +71,10 @@ export default function OrderPage({ params }: OrderPageProps) {
     return () => clearInterval(interval);
   }, [params.orderId]);
 
-  /* ── Loading ── */
   if (loading) {
     return (
-      <div
-        className={dk.page}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        <span className={dk.playfair} style={{ fontSize: 18, color: 'var(--cream-dim)' }}>
-          Chargement…
-        </span>
+      <div className={dk.page} style={{ ...themeStyle, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span className={dk.playfair} style={{ fontSize: 18, color: 'var(--cream-dim)' }}>Chargement…</span>
       </div>
     );
   }
@@ -76,13 +85,15 @@ export default function OrderPage({ params }: OrderPageProps) {
   const isServed    = order.status === 'SERVED';
 
   return (
-    <div className={dk.page}>
+    <div className={dk.page} style={themeStyle}>
 
-      {/* Header */}
+      {/* Slide-up toast on status change */}
+      {toast && (
+        <Toast message={toast.msg} color={toast.color} onClose={() => setToast(null)} />
+      )}
+
       <header className={dk.header}>
-        <button className={dk.backBtn} onClick={() => router.back()}>
-          ← Retour
-        </button>
+        <button className={dk.backBtn} onClick={() => router.back()}>← Retour</button>
         <span className={dk.headerTitle}>Ma commande</span>
         <div className={dk.headerRight}>
           <span className={dk.orderNum}>{order.orderNumber}</span>
@@ -91,19 +102,13 @@ export default function OrderPage({ params }: OrderPageProps) {
 
       <main className={dk.main}>
 
-        {/* Status headline */}
         <div className={dk.card} style={{ textAlign: 'center', padding: '28px 20px' }}>
-          <p
-            className={dk.sectionLabel}
-            style={{ marginBottom: 10 }}
-          >
-            Statut
-          </p>
+          <p className={dk.sectionLabel} style={{ marginBottom: 10 }}>Statut</p>
           <p
             className={dk.playfair}
             style={{
               fontSize: 22,
-              color: isCancelled ? '#f87171' : isServed ? '#6fcf6f' : 'var(--cream)',
+              color: isCancelled ? '#f87171' : isServed ? '#4ade80' : 'var(--cream)',
               marginBottom: 6,
             }}
           >
@@ -112,7 +117,6 @@ export default function OrderPage({ params }: OrderPageProps) {
           <span className={dk.orderNum}>{order.orderNumber}</span>
         </div>
 
-        {/* Stepper */}
         {!isCancelled && (
           <div className={dk.card}>
             <span className={dk.sectionLabel}>Progression</span>
@@ -120,7 +124,6 @@ export default function OrderPage({ params }: OrderPageProps) {
           </div>
         )}
 
-        {/* Cancelled block */}
         {isCancelled && (
           <div className={dk.errorBox} style={{ marginBottom: 10 }}>
             <span className={dk.errorText}>
@@ -129,7 +132,6 @@ export default function OrderPage({ params }: OrderPageProps) {
           </div>
         )}
 
-        {/* Order items */}
         <div className={dk.card}>
           <span className={dk.sectionLabel}>Articles commandés</span>
           {order.items.map((item) => (
@@ -138,7 +140,7 @@ export default function OrderPage({ params }: OrderPageProps) {
                 {locale === 'fr' ? item.itemNameFr : item.itemNameEn}
                 <span style={{ marginLeft: 6, color: 'var(--cream-dim)' }}>× {item.quantity}</span>
               </span>
-              <span className={dk.rowValue}>{formatPrice(item.subtotal)}</span>
+              <span className={dk.rowValue}>{formatPrice(item.unitPrice * item.quantity)}</span>
             </div>
           ))}
           <div className={dk.row} style={{ borderBottom: 'none' }}>
@@ -147,7 +149,6 @@ export default function OrderPage({ params }: OrderPageProps) {
           </div>
         </div>
 
-        {/* Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
           {!isCancelled && !isPaid && (
             <Link href={`/${locale}/payment/${order.id}`} style={{ display: 'block' }}>
@@ -158,16 +159,12 @@ export default function OrderPage({ params }: OrderPageProps) {
           )}
           {isPaid && (
             <Link href={`/${locale}/order/${order.id}/receipt`} style={{ display: 'block' }}>
-              <button className={dk.btnOutline} style={{ width: '100%' }}>
-                Télécharger le reçu
-              </button>
+              <button className={dk.btnOutline} style={{ width: '100%' }}>Télécharger le reçu</button>
             </Link>
           )}
           {isServed && (
             <div className={dk.successBox}>
-              <span className={dk.playfair} style={{ fontSize: 20, color: 'var(--gold)' }}>
-                Bon appétit !
-              </span>
+              <span className={dk.playfair} style={{ fontSize: 20, color: 'var(--gold)' }}>Bon appétit !</span>
               <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 12, color: 'var(--cream-dim)' }}>
                 Merci d'avoir commandé chez nous.
               </p>

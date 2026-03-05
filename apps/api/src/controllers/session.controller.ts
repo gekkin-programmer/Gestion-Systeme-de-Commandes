@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { StartSessionSchema } from '@repo/shared';
 import { env } from '../config/env';
+import { emitTableStatusChanged } from '../services/notification.service';
 
 export async function startSession(req: Request, res: Response): Promise<void> {
   const { tableToken, customerPhone } = StartSessionSchema.parse(req.body);
@@ -34,11 +35,12 @@ export async function startSession(req: Request, res: Response): Promise<void> {
     include: { table: true },
   });
 
-  // Update table status
-  await prisma.table.update({
+  // Update table status and emit real-time event to admin dashboard
+  const updatedTable = await prisma.table.update({
     where: { id: table.id },
     data: { status: 'OCCUPIED' },
   });
+  emitTableStatusChanged(table.restaurant.id, updatedTable);
 
   res.status(201).json({
     success: true,

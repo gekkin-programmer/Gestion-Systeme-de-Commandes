@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { connectSocket, disconnectSocket } from '@/lib/socket';
+import { connectSocket } from '@/lib/socket';
 import { SOCKET_EVENTS } from '@repo/shared';
 import type { Socket } from 'socket.io-client';
 
@@ -10,6 +10,7 @@ interface UseSocketOptions {
   onOrderStatusChanged?: (order: unknown) => void;
   onPaymentStatusChanged?: (payment: unknown) => void;
   onMenuItemAvailabilityChanged?: (item: unknown) => void;
+  onTableStatusChanged?: (table: unknown) => void;
 }
 
 export function useRestaurantSocket(accessToken: string | null, options: UseSocketOptions = {}) {
@@ -23,13 +24,17 @@ export function useRestaurantSocket(accessToken: string | null, options: UseSock
 
     socket.emit(SOCKET_EVENTS.JOIN_RESTAURANT, { token: accessToken });
 
-    if (options.onOrderNew) socket.on(SOCKET_EVENTS.ORDER_NEW, options.onOrderNew);
+    if (options.onOrderNew)
+      socket.on(SOCKET_EVENTS.ORDER_NEW, options.onOrderNew);
     if (options.onOrderStatusChanged)
       socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, options.onOrderStatusChanged);
+    if (options.onTableStatusChanged)
+      socket.on(SOCKET_EVENTS.TABLE_STATUS_CHANGED, options.onTableStatusChanged);
 
     return () => {
       socket.off(SOCKET_EVENTS.ORDER_NEW);
       socket.off(SOCKET_EVENTS.ORDER_STATUS_CHANGED);
+      socket.off(SOCKET_EVENTS.TABLE_STATUS_CHANGED);
     };
   }, [accessToken]);
 

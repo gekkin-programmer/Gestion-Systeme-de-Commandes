@@ -52,6 +52,7 @@ export const SOCKET_EVENTS = {
   PAYMENT_STATUS_CHANGED: 'payment:status_changed',
   MENU_ITEM_AVAILABILITY_CHANGED: 'menu:item_availability_changed',
   SESSION_CLOSED: 'session:closed',
+  TABLE_STATUS_CHANGED: 'table:status_changed',
   // Client → Server
   JOIN_RESTAURANT: 'join:restaurant',
   JOIN_SESSION: 'join:session',

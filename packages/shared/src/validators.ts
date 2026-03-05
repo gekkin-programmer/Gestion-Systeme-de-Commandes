@@ -32,6 +32,7 @@ export const UpdateRestaurantSettingsSchema = z.object({
   enableOrangeMoney: z.boolean().optional(),
   enableCash: z.boolean().optional(),
   taxRate: z.number().min(0).max(1).optional(),
+  themePreset: z.enum(['DARK_GOLD', 'WHITE_PURPLE', 'WHITE_RED']).optional(),
 });
 
 // ─── Category ────────────────────────────────────────────────────────────────

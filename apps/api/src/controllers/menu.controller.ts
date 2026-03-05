@@ -84,7 +84,10 @@ export async function getMenu(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const restaurant = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    include: { settings: true },
+  });
   if (!restaurant || !restaurant.isActive) {
     res.status(404).json({ success: false, error: 'Restaurant not found or inactive' });
     return;
@@ -101,8 +104,10 @@ export async function getMenu(req: Request, res: Response): Promise<void> {
     },
   });
 
+  const theme = (restaurant.settings?.themePreset ?? 'DARK_GOLD') as string;
+  const { settings: _s, ...restaurantData } = restaurant;
   const mapped = categories.map(({ menuItems, ...cat }) => ({ ...cat, items: menuItems }));
-  const payload = { success: true, data: { restaurant, categories: mapped } };
+  const payload = { success: true, data: { restaurant: restaurantData, categories: mapped, theme } };
 
   await setCache(menuKey(restaurantId), payload);
   res.setHeader('X-Cache', 'MISS');
@@ -119,7 +124,10 @@ export async function getMenuBySlug(req: Request, res: Response): Promise<void> 
     return;
   }
 
-  const restaurant = await prisma.restaurant.findUnique({ where: { slug } });
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug },
+    include: { settings: true },
+  });
   if (!restaurant || !restaurant.isActive) {
     res.status(404).json({ success: false, error: 'Restaurant not found' });
     return;
@@ -136,8 +144,10 @@ export async function getMenuBySlug(req: Request, res: Response): Promise<void> 
     },
   });
 
+  const theme = (restaurant.settings?.themePreset ?? 'DARK_GOLD') as string;
+  const { settings: _s, ...restaurantData } = restaurant;
   const mapped = categories.map(({ menuItems, ...cat }) => ({ ...cat, items: menuItems }));
-  const payload = { success: true, data: { restaurant, categories: mapped } };
+  const payload = { success: true, data: { restaurant: restaurantData, categories: mapped, theme } };
 
   await setCache(slugKey(slug), payload);
   res.setHeader('X-Cache', 'MISS');

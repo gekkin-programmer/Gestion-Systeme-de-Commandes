@@ -29,6 +29,17 @@ export interface RestaurantDTO {
   createdAt: string;
 }
 
+export type ThemePreset = 'DARK_GOLD' | 'WHITE_PURPLE' | 'WHITE_RED';
+
+export interface ThemeConfig {
+  bg:      string;
+  surface: string;
+  gold:    string;
+  cream:   string;
+  dim:     string;
+  line:    string;
+}
+
 export interface RestaurantSettingsDTO {
   id: string;
   restaurantId: string;
@@ -38,6 +49,7 @@ export interface RestaurantSettingsDTO {
   enableOrangeMoney: boolean;
   enableCash: boolean;
   taxRate: number;
+  themePreset: string;
 }
 
 // ─── Category ────────────────────────────────────────────────────────────────
@@ -68,8 +80,9 @@ export interface MenuItemDTO {
 }
 
 export interface MenuDTO {
-  restaurant: RestaurantDTO;
-  categories: Array<CategoryDTO & { items: MenuItemDTO[] }>;
+  restaurant:  RestaurantDTO;
+  categories:  Array<CategoryDTO & { items: MenuItemDTO[] }>;
+  theme:       ThemePreset;
 }
 
 // ─── Table ───────────────────────────────────────────────────────────────────

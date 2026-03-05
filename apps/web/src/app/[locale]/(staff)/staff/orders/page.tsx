@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { OrderKanbanBoard } from '@/components/staff/OrderKanbanBoard';
 import { useAuth } from '@/hooks/useAuth';
-import { useOrders } from '@/hooks/useOrders';
+import { useOrders, useSyncStatusQueue } from '@/hooks/useOrders';
 import { useRestaurantSocket } from '@/hooks/useSocket';
 import { useNotification } from '@/hooks/useNotification';
 import dk from '@/styles/dark.module.css';
@@ -15,7 +15,8 @@ export default function StaffOrdersPage() {
   const { user, accessToken, logout } = useAuth();
   const restaurantId = user?.restaurantId ?? '';
 
-  const { orders, loading, fetchOrders, updateOrderStatus, addOrder } = useOrders(restaurantId);
+  const { orders, loading, fetchOrders, updateOrderStatus, addOrder, pendingIds } = useOrders(restaurantId);
+  useSyncStatusQueue(updateOrderStatus);
   const { playNewOrderSound, showBrowserNotification } = useNotification();
 
   useRestaurantSocket(accessToken, {
@@ -105,6 +106,7 @@ export default function StaffOrdersPage() {
           <OrderKanbanBoard
             orders={activeOrders}
             onStatusChange={async (id, status) => { await updateOrderStatus(id, status); }}
+            pendingIds={pendingIds}
           />
         )}
       </main>

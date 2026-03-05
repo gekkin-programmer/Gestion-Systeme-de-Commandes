@@ -6,7 +6,8 @@ import { requireRestaurantAccess } from '../middleware/requireRestaurantAccess';
 
 const router = Router();
 
-router.get('/:restaurantId',       authenticate, requireRole('ADMIN', 'SUPER_ADMIN', 'STAFF'), requireRestaurantAccess('restaurantId'), ctrl.listTables);
+router.get('/:restaurantId/occupancy', authenticate, requireRole('ADMIN', 'SUPER_ADMIN', 'STAFF'), requireRestaurantAccess('restaurantId'), ctrl.getOccupancy);
+router.get('/:restaurantId',           authenticate, requireRole('ADMIN', 'SUPER_ADMIN', 'STAFF'), requireRestaurantAccess('restaurantId'), ctrl.listTables);
 router.post('/:restaurantId',      authenticate, requireRole('ADMIN', 'SUPER_ADMIN'),          requireRestaurantAccess('restaurantId'), ctrl.createTable);
 router.patch('/:restaurantId/:id', authenticate, requireRole('ADMIN', 'SUPER_ADMIN'),          requireRestaurantAccess('restaurantId'), ctrl.updateTable);
 router.delete('/:restaurantId/:id',authenticate, requireRole('ADMIN', 'SUPER_ADMIN'),          requireRestaurantAccess('restaurantId'), ctrl.deleteTable);

@@ -7,6 +7,7 @@ import { CartItem } from '@/components/cart/CartItem';
 import { PaymentMethodSelector } from '@/components/payment/PaymentMethodSelector';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
+import { useTheme } from '@/hooks/useTheme';
 import api from '@/lib/api';
 import dk from '@/styles/dark.module.css';
 import { PAYMENT_METHOD, type PaymentMethod } from '@repo/shared';
@@ -14,13 +15,18 @@ import { PAYMENT_METHOD, type PaymentMethod } from '@repo/shared';
 export default function CartPage() {
   const locale = useLocale();
   const router = useRouter();
+  const themeStyle = useTheme();
 
-  const { items, sessionToken, notes, customerPhone, setNotes, setCustomerPhone, clearCart, getSubtotal } =
-    useCartStore();
+  const {
+    items, sessionToken, notes, customerPhone,
+    setNotes, setCustomerPhone, clearCart, getSubtotal,
+    setPendingOrder, pendingOrder,
+  } = useCartStore();
 
   const [method,   setMethod]  = useState<PaymentMethod>(PAYMENT_METHOD.CASH);
   const [loading,  setLoading] = useState(false);
   const [error,    setError]   = useState('');
+  const [queued,   setQueued]  = useState(false);
   const [mounted,  setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -36,6 +42,22 @@ export default function CartPage() {
     method === PAYMENT_METHOD.MTN_MOBILE_MONEY ||
     method === PAYMENT_METHOD.ORANGE_MONEY;
 
+  const queueOrder = () => {
+    if (!sessionToken) return;
+    // Prevent double-queue
+    if (pendingOrder) return;
+    setPendingOrder({
+      items,
+      sessionToken,
+      notes,
+      customerPhone,
+      paymentMethod: method,
+      isMobileMoney,
+      queuedAt: new Date().toISOString(),
+    });
+    setQueued(true);
+  };
+
   const placeOrder = async () => {
     if (!sessionToken) {
       setError('Session expirée. Retournez au menu et scannez à nouveau le QR code.');
@@ -45,6 +67,13 @@ export default function CartPage() {
       setError('Veuillez saisir votre numéro de téléphone pour le paiement Mobile Money.');
       return;
     }
+
+    // Offline before even trying → queue immediately
+    if (!navigator.onLine) {
+      queueOrder();
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
@@ -72,6 +101,11 @@ export default function CartPage() {
       clearCart();
       router.push(`/${locale}/order/${orderId}`);
     } catch (err: any) {
+      // Network error (VPS unreachable) → queue for retry
+      if (!navigator.onLine || (err as any)?.code === 'ERR_NETWORK') {
+        queueOrder();
+        return;
+      }
       setError(err?.response?.data?.error ?? 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
@@ -83,7 +117,7 @@ export default function CartPage() {
     return (
       <div
         className={dk.page}
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 20 }}
+        style={{ ...themeStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 20 }}
       >
         <span className={dk.sectionLabel}>Votre panier</span>
         <p className={dk.playfair} style={{ fontSize: 20, color: 'var(--cream-dim)' }}>
@@ -98,7 +132,7 @@ export default function CartPage() {
 
   /* ── Full cart ── */
   return (
-    <div className={dk.page}>
+    <div className={dk.page} style={themeStyle}>
 
       {/* Sticky header */}
       <header className={dk.header}>
@@ -179,6 +213,26 @@ export default function CartPage() {
             <span className={dk.errorText}>{error}</span>
           </div>
         )}
+
+        {/* Queued offline notice */}
+        {queued && (
+          <div
+            style={{
+              marginTop: 12,
+              background: 'rgba(212,160,74,0.12)',
+              border: '1px solid rgba(212,160,74,0.35)',
+              padding: '12px 16px',
+              fontFamily: 'Jost, sans-serif',
+              fontSize: 13,
+              color: 'var(--cream)',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}
+          >
+            📴 Commande enregistrée.<br />
+            Elle sera envoyée automatiquement dès le retour du réseau.
+          </div>
+        )}
       </main>
 
       {/* Fixed bottom bar */}
@@ -191,10 +245,10 @@ export default function CartPage() {
         </div>
         <button
           className={dk.fixedBarBtn}
-          disabled={loading}
+          disabled={loading || queued}
           onClick={placeOrder}
         >
-          {loading ? 'Envoi…' : 'Commander'}
+          {loading ? 'Envoi…' : queued ? 'En attente…' : 'Commander'}
         </button>
       </div>
     </div>
