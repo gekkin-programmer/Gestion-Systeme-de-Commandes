@@ -52,6 +52,7 @@ export const CreateMenuItemSchema = z.object({
   descriptionFr: z.string().max(500).optional(),
   descriptionEn: z.string().max(500).optional(),
   price: z.number().positive(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
   isAvailable: z.boolean().default(true),
   isPopular: z.boolean().default(false),
   chefName: z.string().max(100).optional(),

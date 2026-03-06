@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Modal } from '@/components/ui/Modal';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { useEffect, useRef, useState } from 'react';
 import api from '@/lib/api';
+import dk from '@/styles/dark.module.css';
 import type { CategoryDTO, MenuItemDTO } from '@/types';
 
 interface MenuItemFormProps {
@@ -23,6 +21,7 @@ interface FormState {
   descriptionEn: string;
   price: string;
   categoryId: string;
+  imageUrl: string;
   isAvailable: boolean;
   isPopular: boolean;
   chefName: string;
@@ -38,6 +37,7 @@ const EMPTY: FormState = {
   descriptionEn: '',
   price: '',
   categoryId: '',
+  imageUrl: '',
   isAvailable: true,
   isPopular: false,
   chefName: '',
@@ -48,8 +48,9 @@ const EMPTY: FormState = {
 
 export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories, editItem }: MenuItemFormProps) {
   const [form, setForm] = useState<FormState>(EMPTY);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -61,6 +62,7 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
         descriptionEn: editItem.descriptionEn ?? '',
         price: String(editItem.price),
         categoryId: editItem.categoryId,
+        imageUrl: editItem.imageUrl ?? '',
         isAvailable: editItem.isAvailable,
         isPopular: editItem.isPopular,
         chefName: editItem.chefName ?? '',
@@ -71,26 +73,20 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
     } else {
       setForm({ ...EMPTY, categoryId: categories[0]?.id ?? '' });
     }
-    setErrors({});
+    setError(null);
   }, [open, editItem, categories]);
 
   const set = (field: keyof FormState, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const validate = (): boolean => {
-    const errs: Partial<Record<keyof FormState, string>> = {};
-    if (!form.nameFr.trim()) errs.nameFr = 'Requis';
-    if (!form.nameEn.trim()) errs.nameEn = 'Required';
-    if (!form.categoryId) errs.categoryId = 'Sélectionnez une catégorie';
-    const p = parseFloat(form.price);
-    if (isNaN(p) || p <= 0) errs.price = 'Prix invalide (doit être > 0)';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    const p = parseFloat(form.price);
+    if (!form.nameFr.trim()) { setError('Le nom en français est requis'); return; }
+    if (!form.nameEn.trim()) { setError('The English name is required'); return; }
+    if (!form.categoryId)    { setError('Sélectionnez une catégorie'); return; }
+    if (isNaN(p) || p <= 0) { setError('Prix invalide (doit être > 0)'); return; }
+    setError(null);
     setLoading(true);
     try {
       const payload = {
@@ -98,8 +94,9 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
         nameEn: form.nameEn.trim(),
         descriptionFr: form.descriptionFr.trim() || undefined,
         descriptionEn: form.descriptionEn.trim() || undefined,
-        price: parseFloat(form.price),
+        price: p,
         categoryId: form.categoryId,
+        imageUrl: form.imageUrl.trim() || undefined,
         isAvailable: form.isAvailable,
         isPopular: form.isPopular,
         chefName: form.chefName.trim() || undefined,
@@ -107,178 +104,179 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
         calories: form.calories ? parseInt(form.calories) : undefined,
         servings: form.servings ? parseInt(form.servings) : undefined,
       };
-
       const { data } = editItem
         ? await api.patch(`/menu/items/${editItem.id}`, payload)
         : await api.post(`/menu/${restaurantId}/items`, payload);
-
       onSaved(data.data as MenuItemDTO);
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erreur serveur';
-      setErrors({ nameFr: msg });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Erreur serveur';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const title = editItem ? 'Modifier le plat' : 'Ajouter un plat';
+  if (!open) return null;
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: 'var(--bg)',
+    border: '1px solid var(--line)',
+    color: 'var(--cream)',
+    padding: '10px 12px',
+    fontFamily: 'Jost, sans-serif',
+    fontSize: 13,
+    outline: 'none',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: 'Jost, sans-serif',
+    fontSize: 9,
+    letterSpacing: '0.15em',
+    textTransform: 'uppercase' as const,
+    color: 'var(--cream-dim)',
+    display: 'block',
+    marginBottom: 4,
+  };
+
+  const groupStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 };
+
+  const grid2: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 };
 
   return (
-    <Modal open={open} onClose={onClose} title={title} className="max-h-[90vh] overflow-y-auto">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* Names */}
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            id="nameFr"
-            label="Nom (FR) *"
-            value={form.nameFr}
-            onChange={(e) => set('nameFr', e.target.value)}
-            placeholder="Ex: Poulet DG"
-            error={errors.nameFr}
-          />
-          <Input
-            id="nameEn"
-            label="Name (EN) *"
-            value={form.nameEn}
-            onChange={(e) => set('nameEn', e.target.value)}
-            placeholder="Ex: DG Chicken"
-            error={errors.nameEn}
-          />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      {/* Backdrop */}
+      <div
+        ref={overlayRef}
+        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)' }}
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div style={{
+        position: 'relative',
+        zIndex: 201,
+        width: '100%',
+        maxWidth: 540,
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        background: 'var(--surface)',
+        border: '1px solid var(--line)',
+        padding: '24px 20px',
+        borderBottom: 'none',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 16, color: 'var(--cream)', fontWeight: 400 }}>
+            {editItem ? 'Modifier le plat' : 'Ajouter un plat'}
+          </span>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: 'var(--cream-dim)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Descriptions */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor="descFr" className="text-sm font-medium text-gray-700">
-            Description (FR)
-          </label>
-          <textarea
-            id="descFr"
-            rows={2}
-            value={form.descriptionFr}
-            onChange={(e) => set('descriptionFr', e.target.value)}
-            placeholder="Description en français…"
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition-all placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="descEn" className="text-sm font-medium text-gray-700">
-            Description (EN)
-          </label>
-          <textarea
-            id="descEn"
-            rows={2}
-            value={form.descriptionEn}
-            onChange={(e) => set('descriptionEn', e.target.value)}
-            placeholder="English description…"
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition-all placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none"
-          />
-        </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {/* Price + Category */}
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            id="price"
-            label="Prix (XAF) *"
-            type="number"
-            min="1"
-            step="1"
-            value={form.price}
-            onChange={(e) => set('price', e.target.value)}
-            placeholder="Ex: 3500"
-            error={errors.price}
-          />
-          <div className="flex flex-col gap-1">
-            <label htmlFor="categoryId" className="text-sm font-medium text-gray-700">
-              Catégorie *
-            </label>
-            <select
-              id="categoryId"
-              value={form.categoryId}
-              onChange={(e) => set('categoryId', e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-            >
-              <option value="" disabled>Choisir…</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.nameFr}</option>
-              ))}
-            </select>
-            {errors.categoryId && <p className="text-xs text-red-500">{errors.categoryId}</p>}
+          {/* Names */}
+          <div style={grid2}>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Nom (FR) *</label>
+              <input style={inputStyle} value={form.nameFr} onChange={(e) => set('nameFr', e.target.value)} placeholder="Ex: Poulet DG" />
+            </div>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Name (EN) *</label>
+              <input style={inputStyle} value={form.nameEn} onChange={(e) => set('nameEn', e.target.value)} placeholder="Ex: DG Chicken" />
+            </div>
           </div>
-        </div>
 
-        {/* Extra details */}
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            id="chefName"
-            label="Nom du cuisinier"
-            value={form.chefName}
-            onChange={(e) => set('chefName', e.target.value)}
-            placeholder="Ex: Chef Mbarga"
-          />
-          <Input
-            id="cookingTimeMin"
-            label="Temps de cuisson (min)"
-            type="number"
-            min="1"
-            value={form.cookingTimeMin}
-            onChange={(e) => set('cookingTimeMin', e.target.value)}
-            placeholder="Ex: 20"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            id="calories"
-            label="Calories (kcal)"
-            type="number"
-            min="1"
-            value={form.calories}
-            onChange={(e) => set('calories', e.target.value)}
-            placeholder="Ex: 450"
-          />
-          <Input
-            id="servings"
-            label="Nombre de personnes"
-            type="number"
-            min="1"
-            value={form.servings}
-            onChange={(e) => set('servings', e.target.value)}
-            placeholder="Ex: 2"
-          />
-        </div>
+          {/* Descriptions */}
+          <div style={groupStyle}>
+            <label style={labelStyle}>Description (FR)</label>
+            <textarea style={{ ...inputStyle, resize: 'none' }} rows={2} value={form.descriptionFr} onChange={(e) => set('descriptionFr', e.target.value)} placeholder="Description en français…" />
+          </div>
+          <div style={groupStyle}>
+            <label style={labelStyle}>Description (EN)</label>
+            <textarea style={{ ...inputStyle, resize: 'none' }} rows={2} value={form.descriptionEn} onChange={(e) => set('descriptionEn', e.target.value)} placeholder="English description…" />
+          </div>
 
-        {/* Checkboxes */}
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={form.isAvailable}
-              onChange={(e) => set('isAvailable', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-            />
-            <span className="text-sm text-gray-700">Disponible</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={form.isPopular}
-              onChange={(e) => set('isPopular', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-            />
-            <span className="text-sm text-gray-700">Populaire</span>
-          </label>
-        </div>
+          {/* Price + Category */}
+          <div style={grid2}>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Prix (XAF) *</label>
+              <input style={inputStyle} type="number" min="1" step="1" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="Ex: 3500" />
+            </div>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Catégorie *</label>
+              <select style={{ ...inputStyle }} value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
+                <option value="" disabled>Choisir…</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.nameFr}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
-            Annuler
-          </Button>
-          <Button type="submit" loading={loading}>
-            {editItem ? 'Enregistrer' : 'Ajouter'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+          {/* Image URL */}
+          <div style={groupStyle}>
+            <label style={labelStyle}>URL de l&apos;image</label>
+            <input style={inputStyle} value={form.imageUrl} onChange={(e) => set('imageUrl', e.target.value)} placeholder="https://…" />
+          </div>
+
+          {/* Chef + Cooking time */}
+          <div style={grid2}>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Nom du cuisinier</label>
+              <input style={inputStyle} value={form.chefName} onChange={(e) => set('chefName', e.target.value)} placeholder="Ex: Chef Mbarga" />
+            </div>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Temps de cuisson (min)</label>
+              <input style={inputStyle} type="number" min="1" value={form.cookingTimeMin} onChange={(e) => set('cookingTimeMin', e.target.value)} placeholder="Ex: 20" />
+            </div>
+          </div>
+
+          {/* Calories + Servings */}
+          <div style={grid2}>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Calories (kcal)</label>
+              <input style={inputStyle} type="number" min="1" value={form.calories} onChange={(e) => set('calories', e.target.value)} placeholder="Ex: 450" />
+            </div>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Nombre de personnes</label>
+              <input style={inputStyle} type="number" min="1" value={form.servings} onChange={(e) => set('servings', e.target.value)} placeholder="Ex: 2" />
+            </div>
+          </div>
+
+          {/* Checkboxes */}
+          <div style={{ display: 'flex', gap: 24, paddingTop: 4 }}>
+            <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', fontSize: 12 }}>
+              <input type="checkbox" checked={form.isAvailable} onChange={(e) => set('isAvailable', e.target.checked)} />
+              Disponible
+            </label>
+            <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textTransform: 'none', fontSize: 12 }}>
+              <input type="checkbox" checked={form.isPopular} onChange={(e) => set('isPopular', e.target.checked)} />
+              Populaire
+            </label>
+          </div>
+
+          {error && (
+            <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 11, color: '#f87171', marginTop: 4 }}>{error}</p>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
+            <button type="button" className={dk.btnOutline} style={{ fontSize: 10, padding: '10px 20px' }} onClick={onClose} disabled={loading}>
+              Annuler
+            </button>
+            <button type="submit" className={dk.btn} style={{ fontSize: 10, padding: '10px 20px' }} disabled={loading}>
+              {loading ? '…' : editItem ? 'Enregistrer' : 'Ajouter'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
