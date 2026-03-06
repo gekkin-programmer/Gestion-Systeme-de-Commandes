@@ -134,6 +134,10 @@ async function main() {
         price: 2500,
         isAvailable: true,
         isPopular: false,
+        chefName: 'Chef Mbarga',
+        cookingTimeMin: 10,
+        calories: 280,
+        servings: 1,
       },
     }),
     prisma.menuItem.upsert({
@@ -150,6 +154,10 @@ async function main() {
         price: 3000,
         isAvailable: true,
         isPopular: true,
+        chefName: 'Chef Mbarga',
+        cookingTimeMin: 15,
+        calories: 320,
+        servings: 2,
       },
     }),
     // Plats
@@ -167,6 +175,10 @@ async function main() {
         price: 5500,
         isAvailable: true,
         isPopular: true,
+        chefName: 'Chef Nkodo',
+        cookingTimeMin: 35,
+        calories: 620,
+        servings: 2,
       },
     }),
     prisma.menuItem.upsert({
@@ -183,6 +195,10 @@ async function main() {
         price: 7000,
         isAvailable: true,
         isPopular: true,
+        chefName: 'Chef Nkodo',
+        cookingTimeMin: 45,
+        calories: 780,
+        servings: 2,
       },
     }),
     // Boissons

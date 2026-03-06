@@ -97,6 +97,15 @@ function DishCardA({ dish, lang, qty, onAdd, onDecrease, index }: CardProps) {
           <h3 className={styles.dishName}>{name}</h3>
           {desc && <p className={styles.dishDesc}>{desc}</p>}
 
+          {(dish.chefName || dish.cookingTimeMin || dish.calories || dish.servings) && (
+            <div className={styles.dishMeta}>
+              {dish.chefName && <span className={styles.metaItem}>{dish.chefName}</span>}
+              {dish.cookingTimeMin && <span className={styles.metaItem}>{dish.cookingTimeMin} min</span>}
+              {dish.calories && <span className={styles.metaItem}>{dish.calories} kcal</span>}
+              {dish.servings && <span className={styles.metaItem}>{dish.servings} {lang === 'fr' ? 'pers.' : 'ppl.'}</span>}
+            </div>
+          )}
+
           <div className={styles.cardDivider} />
 
           <div className={styles.priceRow}>
@@ -140,6 +149,15 @@ function DishCardB({ dish, lang, qty, onAdd, onDecrease, index }: CardProps) {
         <div className={styles.cardBContent}>
           <h3 className={styles.dishName}>{name}</h3>
           {desc && <p className={`${styles.dishDesc} ${styles.dishDescCompact}`}>{desc}</p>}
+
+          {(dish.chefName || dish.cookingTimeMin || dish.calories || dish.servings) && (
+            <div className={styles.dishMeta}>
+              {dish.chefName && <span className={styles.metaItem}>{dish.chefName}</span>}
+              {dish.cookingTimeMin && <span className={styles.metaItem}>{dish.cookingTimeMin} min</span>}
+              {dish.calories && <span className={styles.metaItem}>{dish.calories} kcal</span>}
+              {dish.servings && <span className={styles.metaItem}>{dish.servings} {lang === 'fr' ? 'pers.' : 'ppl.'}</span>}
+            </div>
+          )}
 
           <div className={styles.cardBPriceRow}>
             <span className={styles.price}>{formatPrice(dish.price)}</span>

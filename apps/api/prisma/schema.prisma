@@ -147,6 +147,10 @@ model MenuItem {
   imageUrl       String?
   isAvailable    Boolean  @default(true)
   isPopular      Boolean  @default(false)
+  chefName       String?
+  cookingTimeMin Int?
+  calories       Int?
+  servings       Int?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

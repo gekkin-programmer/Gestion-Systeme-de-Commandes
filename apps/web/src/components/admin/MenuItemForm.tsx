@@ -25,6 +25,10 @@ interface FormState {
   categoryId: string;
   isAvailable: boolean;
   isPopular: boolean;
+  chefName: string;
+  cookingTimeMin: string;
+  calories: string;
+  servings: string;
 }
 
 const EMPTY: FormState = {
@@ -36,6 +40,10 @@ const EMPTY: FormState = {
   categoryId: '',
   isAvailable: true,
   isPopular: false,
+  chefName: '',
+  cookingTimeMin: '',
+  calories: '',
+  servings: '',
 };
 
 export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories, editItem }: MenuItemFormProps) {
@@ -55,6 +63,10 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
         categoryId: editItem.categoryId,
         isAvailable: editItem.isAvailable,
         isPopular: editItem.isPopular,
+        chefName: editItem.chefName ?? '',
+        cookingTimeMin: editItem.cookingTimeMin ? String(editItem.cookingTimeMin) : '',
+        calories: editItem.calories ? String(editItem.calories) : '',
+        servings: editItem.servings ? String(editItem.servings) : '',
       });
     } else {
       setForm({ ...EMPTY, categoryId: categories[0]?.id ?? '' });
@@ -90,6 +102,10 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
         categoryId: form.categoryId,
         isAvailable: form.isAvailable,
         isPopular: form.isPopular,
+        chefName: form.chefName.trim() || undefined,
+        cookingTimeMin: form.cookingTimeMin ? parseInt(form.cookingTimeMin) : undefined,
+        calories: form.calories ? parseInt(form.calories) : undefined,
+        servings: form.servings ? parseInt(form.servings) : undefined,
       };
 
       const { data } = editItem
@@ -189,6 +205,46 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
             </select>
             {errors.categoryId && <p className="text-xs text-red-500">{errors.categoryId}</p>}
           </div>
+        </div>
+
+        {/* Extra details */}
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            id="chefName"
+            label="Nom du cuisinier"
+            value={form.chefName}
+            onChange={(e) => set('chefName', e.target.value)}
+            placeholder="Ex: Chef Mbarga"
+          />
+          <Input
+            id="cookingTimeMin"
+            label="Temps de cuisson (min)"
+            type="number"
+            min="1"
+            value={form.cookingTimeMin}
+            onChange={(e) => set('cookingTimeMin', e.target.value)}
+            placeholder="Ex: 20"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            id="calories"
+            label="Calories (kcal)"
+            type="number"
+            min="1"
+            value={form.calories}
+            onChange={(e) => set('calories', e.target.value)}
+            placeholder="Ex: 450"
+          />
+          <Input
+            id="servings"
+            label="Nombre de personnes"
+            type="number"
+            min="1"
+            value={form.servings}
+            onChange={(e) => set('servings', e.target.value)}
+            placeholder="Ex: 2"
+          />
         </div>
 
         {/* Checkboxes */}

@@ -54,6 +54,10 @@ export const CreateMenuItemSchema = z.object({
   price: z.number().positive(),
   isAvailable: z.boolean().default(true),
   isPopular: z.boolean().default(false),
+  chefName: z.string().max(100).optional(),
+  cookingTimeMin: z.number().int().positive().optional(),
+  calories: z.number().int().positive().optional(),
+  servings: z.number().int().positive().optional(),
 });
 
 export const UpdateMenuItemSchema = CreateMenuItemSchema.partial();

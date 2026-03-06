@@ -77,6 +77,10 @@ export interface MenuItemDTO {
   imageUrl: string | null;
   isAvailable: boolean;
   isPopular: boolean;
+  chefName: string | null;
+  cookingTimeMin: number | null;
+  calories: number | null;
+  servings: number | null;
 }
 
 export interface MenuDTO {

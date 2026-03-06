@@ -438,6 +438,23 @@
   flex: none;
 }
 
+.dishMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.metaItem {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  border: 1px solid rgba(200, 169, 110, 0.25);
+  padding: 2px 8px;
+}
+
 .cardDivider {
   height: 1px;
   background: var(--line);
