@@ -28,6 +28,9 @@ interface FormState {
   cookingTimeMin: string;
   calories: string;
   servings: string;
+  proteinG: string;
+  carbsG: string;
+  fatG: string;
 }
 
 const EMPTY: FormState = {
@@ -44,12 +47,26 @@ const EMPTY: FormState = {
   cookingTimeMin: '',
   calories: '',
   servings: '',
+  proteinG: '',
+  carbsG: '',
+  fatG: '',
 };
+
+function calcCalories(protein: string, carbs: string, fat: string): string {
+  const p = parseFloat(protein) || 0;
+  const c = parseFloat(carbs) || 0;
+  const f = parseFloat(fat) || 0;
+  if (p === 0 && c === 0 && f === 0) return '';
+  return String(Math.round(p * 4 + c * 4 + f * 9));
+}
 
 export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories, editItem }: MenuItemFormProps) {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,15 +86,54 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
         cookingTimeMin: editItem.cookingTimeMin ? String(editItem.cookingTimeMin) : '',
         calories: editItem.calories ? String(editItem.calories) : '',
         servings: editItem.servings ? String(editItem.servings) : '',
+        proteinG: editItem.proteinG ? String(editItem.proteinG) : '',
+        carbsG: editItem.carbsG ? String(editItem.carbsG) : '',
+        fatG: editItem.fatG ? String(editItem.fatG) : '',
       });
+      setImagePreview(editItem.imageUrl ?? null);
     } else {
       setForm({ ...EMPTY, categoryId: categories[0]?.id ?? '' });
+      setImagePreview(null);
     }
     setError(null);
   }, [open, editItem, categories]);
 
   const set = (field: keyof FormState, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const setMacro = (field: 'proteinG' | 'carbsG' | 'fatG', value: string) => {
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      next.calories = calcCalories(
+        field === 'proteinG' ? value : prev.proteinG,
+        field === 'carbsG' ? value : prev.carbsG,
+        field === 'fatG' ? value : prev.fatG,
+      );
+      return next;
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // local preview
+    setImagePreview(URL.createObjectURL(file));
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const { data } = await api.post('/upload/image', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      set('imageUrl', data.data.url as string);
+    } catch {
+      setError('Erreur lors du téléchargement de l\'image');
+      setImagePreview(null);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +159,9 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
         cookingTimeMin: form.cookingTimeMin ? parseInt(form.cookingTimeMin) : undefined,
         calories: form.calories ? parseInt(form.calories) : undefined,
         servings: form.servings ? parseInt(form.servings) : undefined,
+        proteinG: form.proteinG ? parseFloat(form.proteinG) : undefined,
+        carbsG: form.carbsG ? parseFloat(form.carbsG) : undefined,
+        fatG: form.fatG ? parseFloat(form.fatG) : undefined,
       };
       const { data } = editItem
         ? await api.patch(`/menu/items/${editItem.id}`, payload)
@@ -141,8 +200,8 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
   };
 
   const groupStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 };
-
   const grid2: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 };
+  const grid3: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -220,10 +279,36 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
             </div>
           </div>
 
-          {/* Image URL */}
+          {/* Image upload */}
           <div style={groupStyle}>
-            <label style={labelStyle}>URL de l&apos;image</label>
-            <input style={inputStyle} value={form.imageUrl} onChange={(e) => set('imageUrl', e.target.value)} placeholder="https://…" />
+            <label style={labelStyle}>Image du plat</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+                textAlign: 'left',
+                color: uploading ? 'var(--cream-dim)' : imagePreview ? 'var(--gold)' : 'var(--cream-dim)',
+              }}
+            >
+              {uploading ? 'Téléchargement…' : imagePreview ? 'Image sélectionnée — cliquer pour changer' : 'Choisir une image depuis l\'appareil'}
+            </button>
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="preview"
+                style={{ width: '100%', height: 120, objectFit: 'cover', border: '1px solid var(--line)', marginTop: 4 }}
+              />
+            )}
           </div>
 
           {/* Chef + Cooking time */}
@@ -238,11 +323,37 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
             </div>
           </div>
 
-          {/* Calories + Servings */}
+          {/* Macros → auto-calculate calories */}
+          <div style={groupStyle}>
+            <label style={labelStyle}>Macronutriments (g) — calcul automatique des calories</label>
+            <div style={grid3}>
+              <div style={groupStyle}>
+                <label style={{ ...labelStyle, fontSize: 8 }}>Protéines (g)</label>
+                <input style={inputStyle} type="number" min="0" step="0.1" value={form.proteinG} onChange={(e) => setMacro('proteinG', e.target.value)} placeholder="0" />
+              </div>
+              <div style={groupStyle}>
+                <label style={{ ...labelStyle, fontSize: 8 }}>Glucides (g)</label>
+                <input style={inputStyle} type="number" min="0" step="0.1" value={form.carbsG} onChange={(e) => setMacro('carbsG', e.target.value)} placeholder="0" />
+              </div>
+              <div style={groupStyle}>
+                <label style={{ ...labelStyle, fontSize: 8 }}>Lipides (g)</label>
+                <input style={inputStyle} type="number" min="0" step="0.1" value={form.fatG} onChange={(e) => setMacro('fatG', e.target.value)} placeholder="0" />
+              </div>
+            </div>
+          </div>
+
+          {/* Calories (auto or manual) + Servings */}
           <div style={grid2}>
             <div style={groupStyle}>
               <label style={labelStyle}>Calories (kcal)</label>
-              <input style={inputStyle} type="number" min="1" value={form.calories} onChange={(e) => set('calories', e.target.value)} placeholder="Ex: 450" />
+              <input
+                style={{ ...inputStyle, color: (form.proteinG || form.carbsG || form.fatG) ? 'var(--gold)' : 'var(--cream)' }}
+                type="number"
+                min="1"
+                value={form.calories}
+                onChange={(e) => set('calories', e.target.value)}
+                placeholder="Ex: 450"
+              />
             </div>
             <div style={groupStyle}>
               <label style={labelStyle}>Nombre de personnes</label>
@@ -271,7 +382,7 @@ export function MenuItemForm({ open, onClose, onSaved, restaurantId, categories,
             <button type="button" className={dk.btnOutline} style={{ fontSize: 10, padding: '10px 20px' }} onClick={onClose} disabled={loading}>
               Annuler
             </button>
-            <button type="submit" className={dk.btn} style={{ fontSize: 10, padding: '10px 20px' }} disabled={loading}>
+            <button type="submit" className={dk.btn} style={{ fontSize: 10, padding: '10px 20px' }} disabled={loading || uploading}>
               {loading ? '…' : editItem ? 'Enregistrer' : 'Ajouter'}
             </button>
           </div>

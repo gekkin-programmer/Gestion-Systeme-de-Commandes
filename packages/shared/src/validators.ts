@@ -59,6 +59,9 @@ export const CreateMenuItemSchema = z.object({
   cookingTimeMin: z.number().int().positive().optional(),
   calories: z.number().int().positive().optional(),
   servings: z.number().int().positive().optional(),
+  proteinG: z.number().nonnegative().optional(),
+  carbsG: z.number().nonnegative().optional(),
+  fatG: z.number().nonnegative().optional(),
 });
 
 export const UpdateMenuItemSchema = CreateMenuItemSchema.partial();

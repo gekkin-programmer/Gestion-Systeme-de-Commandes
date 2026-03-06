@@ -81,6 +81,9 @@ export interface MenuItemDTO {
   cookingTimeMin: number | null;
   calories: number | null;
   servings: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
 }
 
 export interface MenuDTO {

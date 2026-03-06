@@ -1,3 +1,5 @@
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -18,6 +20,7 @@ import orderRoutes from './routes/order.routes';
 import paymentRoutes from './routes/payment.routes';
 import receiptRoutes from './routes/receipt.routes';
 import superadminRoutes from './routes/superadmin.routes';
+import uploadRoutes from './routes/upload.routes';
 
 const app = express();
 
@@ -74,6 +77,12 @@ app.get('/health', async (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
 });
 
+// ─── Static uploads ──────────────────────────────────────────────────────────
+
+const UPLOAD_DIR = path.resolve(process.cwd(), '../../uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+app.use('/api/v1/uploads', express.static(UPLOAD_DIR));
+
 // ─── API Routes ──────────────────────────────────────────────────────────────
 
 const API = '/api/v1';
@@ -90,6 +99,7 @@ app.use(`${API}/menu`,        menuRoutes);
 app.use(`${API}/restaurants`, adminRateLimiter, restaurantRoutes);
 app.use(`${API}/tables`,      adminRateLimiter, tableRoutes);
 app.use(`${API}/superadmin`,  adminRateLimiter, superadminRoutes);
+app.use(`${API}/upload`,      adminRateLimiter, uploadRoutes);
 
 // ─── 404 ─────────────────────────────────────────────────────────────────────
 
