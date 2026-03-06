@@ -47,14 +47,27 @@ jobs:
     needs: ci
 
     steps:
-      - name: Deploy via SSH
+      - name: Write SSH key
         env:
           SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
-          echo "" >> ~/.ssh/deploy_key
+          python3 - <<'PYEOF'
+import os
+key = os.environ['SSH_PRIVATE_KEY']
+key = key.replace('\r\n', '\n').replace('\r', '\n')
+lines = [l.rstrip() for l in key.split('\n')]
+key = '\n'.join(lines)
+if not key.endswith('\n'):
+    key += '\n'
+with open(os.path.expanduser('~/.ssh/deploy_key'), 'w') as f:
+    f.write(key)
+PYEOF
           chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -l -f ~/.ssh/deploy_key
+
+      - name: Deploy via SSH
+        run: |
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=no \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
