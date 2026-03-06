@@ -46,7 +46,7 @@ export const CreateCategorySchema = z.object({
 // ─── MenuItem ────────────────────────────────────────────────────────────────
 
 export const CreateMenuItemSchema = z.object({
-  categoryId: z.string().uuid(),
+  categoryId: z.string().min(1),
   nameFr: z.string().min(1).max(200),
   nameEn: z.string().min(1).max(200),
   descriptionFr: z.string().max(500).optional(),
