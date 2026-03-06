@@ -38,7 +38,7 @@ export default function ReceiptPage({ params }: ReceiptPageProps) {
             Reçu prêt
           </p>
           <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 12, color: 'var(--cream-dim)' }}>
-            Le reçu devrait s'ouvrir automatiquement dans votre navigateur.
+            Le reçu devrait s&apos;ouvrir automatiquement dans votre navigateur.
           </p>
           <button className={dk.btnOutline} onClick={() => router.back()} style={{ marginTop: 8 }}>
             ← Retour

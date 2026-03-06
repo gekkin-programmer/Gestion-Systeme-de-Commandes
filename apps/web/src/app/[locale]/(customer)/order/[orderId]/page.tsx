@@ -166,7 +166,7 @@ export default function OrderPage({ params }: OrderPageProps) {
             <div className={dk.successBox}>
               <span className={dk.playfair} style={{ fontSize: 20, color: 'var(--gold)' }}>Bon appétit !</span>
               <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 12, color: 'var(--cream-dim)' }}>
-                Merci d'avoir commandé chez nous.
+                Merci d&apos;avoir commandé chez nous.
               </p>
             </div>
           )}

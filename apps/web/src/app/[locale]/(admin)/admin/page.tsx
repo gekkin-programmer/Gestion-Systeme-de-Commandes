@@ -53,7 +53,7 @@ export default function AdminDashboard() {
       <main className={dk.main}>
 
         {/* Stats */}
-        <span className={dk.sectionLabel}>Aujourd'hui</span>
+        <span className={dk.sectionLabel}>Aujourd&apos;hui</span>
         {loading ? (
           <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 12, color: 'var(--cream-dim)', padding: '20px 0' }}>
             Chargement…
