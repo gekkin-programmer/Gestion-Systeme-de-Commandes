@@ -9,5 +9,7 @@ router.post('/login', authRateLimiter, ctrl.login);
 router.post('/refresh', ctrl.refresh);
 router.post('/logout', ctrl.logout);
 router.get('/me', authenticate, ctrl.me);
+router.post('/forgot-password', authRateLimiter, ctrl.forgotPassword);
+router.post('/reset-password', ctrl.resetPassword);
 
 export default router;

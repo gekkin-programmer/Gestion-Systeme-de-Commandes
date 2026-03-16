@@ -14,6 +14,7 @@ export const PAYMENT_STATUS = {
   PENDING_VERIFICATION: 'PENDING_VERIFICATION',
   PAID: 'PAID',
   FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
 } as const;
 
 export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];

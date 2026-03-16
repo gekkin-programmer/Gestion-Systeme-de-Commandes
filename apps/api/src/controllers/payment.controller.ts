@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { InitiatePaymentSchema } from '@repo/shared';
 import { initiateMobileMoneyPayment, simulatePaymentCallback } from '../services/payment.service';
-import { emitPaymentStatusChanged } from '../services/notification.service';
+import { emitPaymentStatusChanged, emitOrderStatusChanged } from '../services/notification.service';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 
 export async function initiatePayment(req: Request, res: Response): Promise<void> {
@@ -116,4 +116,43 @@ export async function mockMoMoCallback(req: Request, res: Response): Promise<voi
   emitPaymentStatusChanged(payment.order.tableSessionId, updated);
 
   res.json({ success: true, data: { simulate, status: updated?.status } });
+}
+
+export async function refundPayment(req: Request, res: Response): Promise<void> {
+  const payment = await prisma.payment.findUnique({
+    where: { orderId: req.params.orderId },
+    include: { order: { include: { tableSession: true } } },
+  });
+
+  if (!payment) {
+    res.status(404).json({ success: false, error: 'Payment not found' });
+    return;
+  }
+
+  // Multi-tenancy check: staff/admin can only refund their own restaurant's payments
+  if (req.user?.role !== 'SUPER_ADMIN' && payment.order.restaurantId !== req.user?.restaurantId) {
+    res.status(403).json({ success: false, error: 'Access denied to this payment' });
+    return;
+  }
+
+  if (payment.status !== PaymentStatus.PAID) {
+    res.status(400).json({ success: false, error: 'Only paid orders can be refunded' });
+    return;
+  }
+
+  const updatedPayment = await prisma.payment.update({
+    where: { id: payment.id },
+    data: { status: PaymentStatus.REFUNDED },
+  });
+
+  const cancelledOrder = await prisma.order.update({
+    where: { id: payment.orderId },
+    data: { status: 'CANCELLED' },
+    include: { items: true, payment: true, tableSession: true },
+  });
+
+  emitPaymentStatusChanged(payment.order.tableSessionId, updatedPayment);
+  emitOrderStatusChanged(payment.order.restaurantId, payment.order.tableSessionId, cancelledOrder);
+
+  res.json({ success: true, data: updatedPayment });
 }

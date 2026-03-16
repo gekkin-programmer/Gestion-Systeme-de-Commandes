@@ -11,10 +11,12 @@ import dk from '@/styles/dark.module.css';
 import type { DailyStatsDTO } from '@/types';
 
 const NAV = [
-  { label: 'Menu',        sub: 'Plats & catégories',  href: 'menu',     icon: '🍽' },
-  { label: 'Tables',      sub: 'QR codes & statuts',   href: 'tables',   icon: '🪑' },
-  { label: 'Commandes',   sub: 'Suivi en temps réel',  href: 'orders',   icon: '📋' },
-  { label: 'Paramètres',  sub: 'Paiements & config',   href: 'settings', icon: '⚙️' },
+  { label: 'Menu',         sub: 'Plats & catégories',   href: 'menu',     icon: '🍽',  external: false },
+  { label: 'Tables',       sub: 'QR codes & statuts',    href: 'tables',   icon: '🪑',  external: false },
+  { label: 'Commandes',    sub: 'Suivi en temps réel',   href: 'orders',   icon: '📋',  external: false },
+  { label: 'Paramètres',   sub: 'Paiements & config',    href: 'settings', icon: '⚙️',  external: false },
+  { label: 'Gestion Staff', sub: 'Comptes du personnel',  href: 'staff',    icon: '👥',  external: false },
+  { label: 'Cuisine (KDS)', sub: 'Affichage cuisine',     href: 'kitchen',  icon: '🔥',  external: true  },
 ];
 
 export default function AdminDashboard() {
@@ -70,33 +72,38 @@ export default function AdminDashboard() {
         {/* Navigation */}
         <span className={dk.sectionLabel}>Gestion</span>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={`/${locale}/admin/${item.href}`}
-              style={{ textDecoration: 'none' }}
-            >
-              <div
-                className={dk.card}
-                style={{
-                  marginBottom: 0,
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
+          {NAV.map((item) => {
+            const dest = item.external
+              ? `/${locale}/staff/${item.href}`
+              : `/${locale}/admin/${item.href}`;
+            return (
+              <Link
+                key={item.href}
+                href={dest}
+                style={{ textDecoration: 'none' }}
               >
-                <span style={{ fontSize: 28, lineHeight: 1 }}>{item.icon}</span>
-                <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--cream)' }}>
-                  {item.label}
-                </p>
-                <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--cream-dim)', letterSpacing: '0.04em' }}>
-                  {item.sub}
-                </p>
-              </div>
-            </Link>
-          ))}
+                <div
+                  className={dk.card}
+                  style={{
+                    marginBottom: 0,
+                    cursor: 'pointer',
+                    transition: 'border-color 0.2s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ fontSize: 28, lineHeight: 1 }}>{item.icon}</span>
+                  <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--cream)' }}>
+                    {item.label}
+                  </p>
+                  <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--cream-dim)', letterSpacing: '0.04em' }}>
+                    {item.sub}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </main>
     </div>

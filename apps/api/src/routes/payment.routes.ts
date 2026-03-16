@@ -20,4 +20,12 @@ router.post(
 // Mock MoMo webhook (rate-limited)
 router.post('/callback/mock/:orderId', paymentRateLimiter, ctrl.mockMoMoCallback);
 
+// Staff/Admin: refund a paid payment and cancel the order
+router.post(
+  '/:orderId/refund',
+  authenticate,
+  requireRole('STAFF', 'ADMIN', 'SUPER_ADMIN'),
+  ctrl.refundPayment,
+);
+
 export default router;

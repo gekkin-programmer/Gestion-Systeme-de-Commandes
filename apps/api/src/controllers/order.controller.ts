@@ -147,3 +147,39 @@ export async function getOrderHistory(req: Request, res: Response): Promise<void
 
   res.json({ success: true, data: orders });
 }
+
+export async function cancelOrderByCustomer(req: Request, res: Response): Promise<void> {
+  const { sessionToken } = req.body as { sessionToken: string };
+
+  const order = await prisma.order.findUnique({
+    where: { id: req.params.id },
+    include: { tableSession: true },
+  });
+
+  if (!order) {
+    res.status(404).json({ success: false, error: 'Order not found' });
+    return;
+  }
+
+  // Validate the sessionToken belongs to this order's session
+  if (order.tableSession.sessionToken !== sessionToken) {
+    res.status(403).json({ success: false, error: 'Unauthorized' });
+    return;
+  }
+
+  // Only PENDING orders can be cancelled by the customer
+  if (order.status !== 'PENDING') {
+    res.status(400).json({ success: false, error: 'Only pending orders can be cancelled' });
+    return;
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: order.id },
+    data: { status: 'CANCELLED' },
+    include: { items: true, payment: true, tableSession: true },
+  });
+
+  emitOrderStatusChanged(order.restaurantId, order.tableSessionId, updated);
+
+  res.json({ success: true, data: updated });
+}

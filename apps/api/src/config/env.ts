@@ -18,6 +18,7 @@ const envSchema = z.object({
   DATABASE_POOL_SIZE: z.coerce.number().default(10),
   SUPER_ADMIN_EMAIL: z.string().email().optional(),
   SUPER_ADMIN_PASSWORD: z.string().optional(),
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 });
 
 const parsed = envSchema.safeParse(process.env);

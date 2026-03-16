@@ -87,7 +87,24 @@ export default function LoginPage() {
             </div>
 
             <div className={dk.inputGroup}>
-              <label className={dk.inputLabel} htmlFor="password">Mot de passe</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label className={dk.inputLabel} htmlFor="password">Mot de passe</label>
+                <a
+                  href={`/${locale}/forgot-password`}
+                  style={{
+                    fontFamily: 'Jost, sans-serif',
+                    fontSize: 9,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: 'var(--gold)',
+                    textDecoration: 'none',
+                    opacity: 0.8,
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  Mot de passe oublié ?
+                </a>
+              </div>
               <input
                 id="password"
                 type="password"

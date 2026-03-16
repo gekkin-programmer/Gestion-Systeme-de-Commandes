@@ -12,7 +12,7 @@ import { useCartStore } from '@/store/cartStore';
 import { useSessionSocket } from '@/hooks/useSocket';
 import { useTheme } from '@/hooks/useTheme';
 import dk from '@/styles/dark.module.css';
-import type { OrderDTO } from '@/types';
+import type { OrderDTO, OrderItemDTO } from '@/types';
 import type { OrderStatus } from '@repo/shared';
 
 const STATUS_FR: Partial<Record<OrderStatus, string>> = {
@@ -42,9 +42,10 @@ export default function OrderPage({ params }: OrderPageProps) {
   const sessionToken = useCartStore((s) => s.sessionToken);
   const themeStyle   = useTheme();
 
-  const [order,   setOrder]   = useState<OrderDTO | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [toast,   setToast]   = useState<{ msg: string; color: string } | null>(null);
+  const [order,      setOrder]      = useState<OrderDTO | null>(null);
+  const [loading,    setLoading]    = useState(true);
+  const [toast,      setToast]      = useState<{ msg: string; color: string } | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     api.get(`/orders/${params.orderId}/status`)
@@ -71,6 +72,20 @@ export default function OrderPage({ params }: OrderPageProps) {
     return () => clearInterval(interval);
   }, [params.orderId]);
 
+  const handleCancel = useCallback(async () => {
+    if (!sessionToken || !order) return;
+    setCancelling(true);
+    try {
+      await api.post(`/orders/${order.id}/cancel`, { sessionToken });
+      setOrder((prev: OrderDTO | null) => prev ? { ...prev, status: 'CANCELLED' as OrderStatus } : prev);
+      setToast({ msg: 'Commande annulée.', color: '#f87171' });
+    } catch {
+      setToast({ msg: "Impossible d'annuler la commande.", color: '#f87171' });
+    } finally {
+      setCancelling(false);
+    }
+  }, [sessionToken, order]);
+
   if (loading) {
     return (
       <div className={dk.page} style={{ ...themeStyle, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -83,6 +98,7 @@ export default function OrderPage({ params }: OrderPageProps) {
   const isPaid      = order.payment?.status === 'PAID';
   const isCancelled = order.status === 'CANCELLED';
   const isServed    = order.status === 'SERVED';
+  const isPending   = order.status === 'PENDING';
 
   return (
     <div className={dk.page} style={themeStyle}>
@@ -134,7 +150,7 @@ export default function OrderPage({ params }: OrderPageProps) {
 
         <div className={dk.card}>
           <span className={dk.sectionLabel}>Articles commandés</span>
-          {order.items.map((item) => (
+          {order.items.map((item: OrderItemDTO) => (
             <div key={item.id} className={dk.row}>
               <span className={dk.rowLabel}>
                 {locale === 'fr' ? item.itemNameFr : item.itemNameEn}
@@ -150,6 +166,17 @@ export default function OrderPage({ params }: OrderPageProps) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+          {/* Cancel button — only while PENDING */}
+          {isPending && (
+            <button
+              className={dk.btnDanger}
+              style={{ width: '100%' }}
+              disabled={cancelling}
+              onClick={handleCancel}
+            >
+              {cancelling ? 'Annulation…' : 'Annuler ma commande'}
+            </button>
+          )}
           {!isCancelled && !isPaid && (
             <Link href={`/${locale}/payment/${order.id}`} style={{ display: 'block' }}>
               <button className={dk.btn} style={{ width: '100%' }}>

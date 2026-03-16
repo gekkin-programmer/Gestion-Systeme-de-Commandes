@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { BackButton } from '@/components/shared/BackButton';
@@ -42,9 +42,33 @@ export default function OrderHistoryPage() {
   const { user }     = useAuth();
   const restaurantId = user?.restaurantId ?? '';
 
-  const [date,    setDate]    = useState(todayISO());
-  const [orders,  setOrders]  = useState<OrderDTO[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [date,        setDate]        = useState(todayISO());
+  const [orders,      setOrders]      = useState<OrderDTO[]>([]);
+  const [loading,     setLoading]     = useState(false);
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [refundError, setRefundError] = useState<string | null>(null);
+
+  const handleRefund = useCallback(async (orderId: string) => {
+    setRefundingId(orderId);
+    setRefundError(null);
+    try {
+      await api.post(`/payments/${orderId}/refund`);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, payment: o.payment ? { ...o.payment, status: 'REFUNDED' } : o.payment }
+            : o,
+        ),
+      );
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Erreur lors du remboursement.';
+      setRefundError(msg);
+    } finally {
+      setRefundingId(null);
+    }
+  }, []);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -106,6 +130,19 @@ export default function OrderHistoryPage() {
           </div>
         </div>
 
+        {/* Refund error toast */}
+        {refundError && (
+          <div className={dk.errorBox} style={{ marginBottom: 12 }}>
+            <span className={dk.errorText}>{refundError}</span>
+            <button
+              onClick={() => setRefundError(null)}
+              style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', marginLeft: 'auto', fontSize: 14 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Orders list */}
         {loading ? (
           <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 12, color: 'var(--cream-dim)', textAlign: 'center', padding: '40px 0' }}>
@@ -120,38 +157,68 @@ export default function OrderHistoryPage() {
         ) : (
           <div className={dk.card} style={{ padding: 0, overflow: 'hidden' }}>
             {orders.map((order) => {
-              const color = STATUS_COLOR[order.status as OrderStatus] ?? 'var(--cream-dim)';
-              return (
-                <Link
-                  key={order.id}
-                  href={`/${locale}/order/${order.id}`}
-                  style={{ textDecoration: 'none', display: 'block' }}
-                >
-                  <div className={dk.historyRow}>
-                    {/* Status dot */}
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+              const color     = STATUS_COLOR[order.status as OrderStatus] ?? 'var(--cream-dim)';
+              const isPaid    = order.payment?.status === 'PAID';
+              const isRefunded = order.payment?.status === 'REFUNDED';
+              const isRefunding = refundingId === order.id;
 
-                    {/* Time + number */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 54 }}>
-                      <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 12, color: 'var(--cream)' }}>
-                        {formatTime(order.createdAt)}
+              return (
+                <div key={order.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <Link
+                    href={`/${locale}/order/${order.id}`}
+                    style={{ textDecoration: 'none', display: 'block' }}
+                  >
+                    <div className={dk.historyRow} style={{ borderBottom: 'none' }}>
+                      {/* Status dot */}
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+
+                      {/* Time + number */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 54 }}>
+                        <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 12, color: 'var(--cream)' }}>
+                          {formatTime(order.createdAt)}
+                        </span>
+                        <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 9, letterSpacing: '0.1em', color: 'var(--cream-dim)' }}>
+                          {order.orderNumber}
+                        </span>
+                      </div>
+
+                      {/* Status label */}
+                      <span style={{ flex: 1, fontFamily: 'Jost, sans-serif', fontSize: 11, color }}>
+                        {STATUS_LABEL[order.status as OrderStatus] ?? order.status}
                       </span>
-                      <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 9, letterSpacing: '0.1em', color: 'var(--cream-dim)' }}>
-                        {order.orderNumber}
+
+                      {/* Payment badge */}
+                      {isRefunded && (
+                        <span style={{
+                          fontFamily: 'Jost, sans-serif', fontSize: 8, letterSpacing: '0.1em',
+                          textTransform: 'uppercase', color: '#94a3b8',
+                          border: '1px solid rgba(148,163,184,0.35)', padding: '2px 6px', flexShrink: 0,
+                        }}>
+                          Remboursé
+                        </span>
+                      )}
+
+                      {/* Amount */}
+                      <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, color: 'var(--gold)', flexShrink: 0 }}>
+                        {formatPrice(order.totalAmount)}
                       </span>
                     </div>
+                  </Link>
 
-                    {/* Status label */}
-                    <span style={{ flex: 1, fontFamily: 'Jost, sans-serif', fontSize: 11, color }}>
-                      {STATUS_LABEL[order.status as OrderStatus] ?? order.status}
-                    </span>
-
-                    {/* Amount */}
-                    <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, color: 'var(--gold)', flexShrink: 0 }}>
-                      {formatPrice(order.totalAmount)}
-                    </span>
-                  </div>
-                </Link>
+                  {/* Refund button — shown only for PAID orders */}
+                  {isPaid && !isRefunded && (
+                    <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        className={dk.btnDanger}
+                        style={{ fontSize: 9, padding: '5px 14px' }}
+                        disabled={isRefunding}
+                        onClick={() => handleRefund(order.id)}
+                      >
+                        {isRefunding ? 'Remboursement…' : 'Rembourser'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

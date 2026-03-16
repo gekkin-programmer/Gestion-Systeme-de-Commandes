@@ -10,6 +10,9 @@ const router = Router();
 // Client: Create order (no auth — session token validates)
 router.post('/', orderRateLimiter, ctrl.createOrder);
 
+// Client: Cancel own pending order (no auth — session token in body validates ownership)
+router.post('/:id/cancel', ctrl.cancelOrderByCustomer);
+
 // Client: Poll order status & history
 router.get('/history', ctrl.getOrderHistory);
 router.get('/:id/status', ctrl.getOrderStatus);
