@@ -86,6 +86,14 @@ export function TableQRCard({ table, restaurantId, onUpdated }: TableQRCardProps
           >
             Télécharger PNG
           </button>
+          <button
+            onClick={generateQR}
+            disabled={loading}
+            className={dk.btnOutline}
+            style={{ fontSize: 9, padding: '8px 16px', width: '100%', opacity: 0.6 }}
+          >
+            {loading ? 'Regénération…' : '↺ Regénérer QR'}
+          </button>
         </>
       ) : (
         <button
