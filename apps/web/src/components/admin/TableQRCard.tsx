@@ -38,11 +38,13 @@ export function TableQRCard({ table, restaurantId, onUpdated }: TableQRCardProps
     }
   };
 
-  const downloadQR = () => {
-    window.open(
-      `${process.env.NEXT_PUBLIC_API_URL}/tables/${restaurantId}/${table.id}/qr/download`,
-      '_blank',
-    );
+  const downloadQR = async () => {
+    const url = qrUrl;
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `qr-${table.label.replace(/\s+/g, '-')}.png`;
+    a.click();
   };
 
   return (
