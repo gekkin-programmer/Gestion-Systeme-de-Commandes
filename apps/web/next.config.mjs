@@ -51,6 +51,13 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  webpack(config, { dev }) {
+    if (!dev) {
+      // agentation is a dev-only tool — stub it out so production builds don't fail
+      config.resolve.alias['agentation'] = false;
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
