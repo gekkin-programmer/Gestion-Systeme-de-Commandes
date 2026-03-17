@@ -47,7 +47,7 @@ export async function getOccupancy(req: Request, res: Response): Promise<void> {
   res.json({ success: true, data });
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000';
+const BASE_URL = env.FRONTEND_URL;
 
 export async function listTables(req: Request, res: Response): Promise<void> {
   const tables = await prisma.table.findMany({
