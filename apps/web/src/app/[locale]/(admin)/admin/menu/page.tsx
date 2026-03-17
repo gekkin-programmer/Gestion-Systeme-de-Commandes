@@ -162,6 +162,23 @@ export default function AdminMenuPage() {
 
                     return (
                       <div key={item.id} className={dk.row} style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        {/* Thumbnail */}
+                        <div style={{
+                          width: 48, height: 48, flexShrink: 0,
+                          background: 'var(--bg)',
+                          border: '1px solid var(--line)',
+                          overflow: 'hidden',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.imageUrl} alt={iName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cream-dim)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}>
+                              <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                            </svg>
+                          )}
+                        </div>
                         {/* Info */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 13, color: 'var(--cream)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -174,14 +191,14 @@ export default function AdminMenuPage() {
 
                         {/* Badges */}
                         {item.isPopular && (
-                          <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gold)', border: '1px solid rgba(200,169,110,0.4)', padding: '2px 6px' }}>
+                          <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C8A96E', border: '1px solid rgba(200,169,110,0.4)', padding: '2px 6px' }}>
                             Populaire
                           </span>
                         )}
                         <span style={{
                           fontFamily: 'Jost, sans-serif', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
-                          color:   item.isAvailable ? '#6fcf6f' : '#f87171',
-                          border: `1px solid ${item.isAvailable ? 'rgba(111,207,111,0.4)' : 'rgba(248,113,113,0.4)'}`,
+                          color: item.isAvailable ? '#C8A96E' : 'var(--cream-dim)',
+                          border: `1px solid ${item.isAvailable ? 'rgba(200,169,110,0.4)' : 'rgba(168,152,128,0.3)'}`,
                           padding: '2px 6px',
                         }}>
                           {item.isAvailable ? 'Dispo' : 'Indispo'}
@@ -189,7 +206,7 @@ export default function AdminMenuPage() {
 
                         {/* Toggle */}
                         <button
-                          style={{ background: 'none', border: '1px solid var(--line)', color: 'var(--cream-dim)', padding: '4px 8px', cursor: 'pointer', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'border-color 0.2s, color 0.2s', flexShrink: 0 }}
+                          style={{ background: 'none', border: '1px solid rgba(200,169,110,0.4)', color: '#C8A96E', padding: '4px 8px', cursor: 'pointer', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'border-color 0.2s, color 0.2s', flexShrink: 0 }}
                           onClick={() => handleToggleAvailability(item)}
                         >
                           {item.isAvailable ? 'Désactiver' : 'Activer'}
@@ -197,7 +214,7 @@ export default function AdminMenuPage() {
 
                         {/* Edit */}
                         <button
-                          style={{ background: 'none', border: '1px solid var(--line)', color: 'var(--cream-dim)', padding: '4px 8px', cursor: 'pointer', fontSize: 11, transition: 'color 0.2s', flexShrink: 0 }}
+                          style={{ background: 'none', border: '1px solid rgba(200,169,110,0.4)', color: '#C8A96E', padding: '4px 8px', cursor: 'pointer', fontSize: 11, transition: 'color 0.2s', flexShrink: 0 }}
                           onClick={() => setItemModal({ open: true, editItem: item })}
                         >
                           ✏

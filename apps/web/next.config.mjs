@@ -35,9 +35,9 @@ const securityHeaders = [
       // Fonts: self + Google Fonts CDN
       `font-src 'self' https://fonts.gstatic.com`,
       // Images: self + Cloudinary + Unsplash + data URIs (QR codes)
-      `img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com`,
-      // API + Socket.io connections
-      `connect-src 'self' ${apiOrigin} ${sockOrigin}`,
+      `img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com ${apiOrigin}`,
+      // API + Socket.io connections + agentation dev tool
+      `connect-src 'self' ${apiOrigin} ${sockOrigin}${process.env.NODE_ENV === 'development' ? ' http://localhost:4747' : ''}`,
       // No plugins (PDF is opened in new tab or downloaded)
       "object-src 'none'",
       // Restrict frames
@@ -55,6 +55,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'http',  hostname: 'localhost', port: '4000' },
+      { protocol: 'http',  hostname: '72.60.214.93', port: '4000' },
     ],
   },
   async headers() {

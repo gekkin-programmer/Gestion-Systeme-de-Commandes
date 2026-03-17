@@ -98,11 +98,31 @@ function DishCardA({ dish, lang, qty, onAdd, onDecrease, index }: CardProps) {
           {desc && <p className={styles.dishDesc}>{desc}</p>}
 
           {(dish.chefName || dish.cookingTimeMin || dish.calories || dish.servings) && (
-            <div className={styles.dishMeta}>
-              {dish.chefName && <span className={styles.metaItem}>{dish.chefName}</span>}
-              {dish.cookingTimeMin && <span className={styles.metaItem}>{dish.cookingTimeMin} min</span>}
-              {dish.calories && <span className={styles.metaItem}>{dish.calories} kcal</span>}
-              {dish.servings && <span className={styles.metaItem}>{dish.servings} {lang === 'fr' ? 'pers.' : 'ppl.'}</span>}
+            <div className={styles.metaGrid}>
+              {dish.cookingTimeMin && (
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>{lang === 'fr' ? 'Cuisson' : 'Cook time'}</span>
+                  <span className={styles.metaValue}>{dish.cookingTimeMin} min</span>
+                </div>
+              )}
+              {dish.calories && (
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Calories</span>
+                  <span className={styles.metaValue}>{dish.calories} kcal</span>
+                </div>
+              )}
+              {dish.servings && (
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>{lang === 'fr' ? 'Personnes' : 'Servings'}</span>
+                  <span className={styles.metaValue}>{dish.servings}</span>
+                </div>
+              )}
+              {dish.chefName && (
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Chef</span>
+                  <span className={styles.metaValue}>{dish.chefName}</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -138,24 +158,38 @@ function DishCardB({ dish, lang, qty, onAdd, onDecrease, index }: CardProps) {
         <div className={styles.cardBImage}>
           <img src={dish.imageUrl ?? 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80'} alt={name} loading="lazy" />
         </div>
-        <div className={styles.cardBOverlay} />
-
-        {dish.isPopular && (
-          <div className={styles.popularBadge}>
-            {lang === 'fr' ? 'Populaire' : 'Popular'}
-          </div>
-        )}
 
         <div className={styles.cardBContent}>
-          <h3 className={styles.dishName}>{name}</h3>
+          {dish.isPopular && (
+            <div className={styles.popularBadge}>
+              {lang === 'fr' ? 'Populaire' : 'Popular'}
+            </div>
+          )}
+          <h3 className={styles.dishName} style={{ fontSize: 16 }}>{name}</h3>
           {desc && <p className={`${styles.dishDesc} ${styles.dishDescCompact}`}>{desc}</p>}
 
           {(dish.chefName || dish.cookingTimeMin || dish.calories || dish.servings) && (
-            <div className={styles.dishMeta}>
-              {dish.chefName && <span className={styles.metaItem}>{dish.chefName}</span>}
-              {dish.cookingTimeMin && <span className={styles.metaItem}>{dish.cookingTimeMin} min</span>}
-              {dish.calories && <span className={styles.metaItem}>{dish.calories} kcal</span>}
-              {dish.servings && <span className={styles.metaItem}>{dish.servings} {lang === 'fr' ? 'pers.' : 'ppl.'}</span>}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }}>
+              {dish.cookingTimeMin && (
+                <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--cream-dim)', letterSpacing: '0.04em' }}>
+                  {dish.cookingTimeMin} min
+                </span>
+              )}
+              {dish.calories && (
+                <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--cream-dim)', letterSpacing: '0.04em' }}>
+                  {dish.calories} kcal
+                </span>
+              )}
+              {dish.servings && (
+                <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--cream-dim)', letterSpacing: '0.04em' }}>
+                  {dish.servings} {lang === 'fr' ? 'pers.' : 'ppl.'}
+                </span>
+              )}
+              {dish.chefName && (
+                <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--gold)', letterSpacing: '0.04em' }}>
+                  {dish.chefName}
+                </span>
+              )}
             </div>
           )}
 
@@ -263,7 +297,7 @@ export default function MenuPage({ params }: MenuPageProps) {
   const handleDecrease = (dish: MenuItemDTO) =>
     updateQuantity(dish.id, getQty(dish.id) - 1);
 
-  if (!menuData && !loadError) return <MenuSkeleton />;
+  if (!mounted || (!menuData && !loadError)) return <MenuSkeleton />;
 
   if (loadError) {
     return (

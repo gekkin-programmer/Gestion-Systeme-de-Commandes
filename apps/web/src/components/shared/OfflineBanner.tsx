@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useOnline } from '@/hooks/useOnline';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useCartStore } from '@/store/cartStore';
@@ -15,9 +16,15 @@ export function OfflineBanner() {
   // Mount the sync hook here so it's always active
   useOfflineSync();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const isOnline      = useOnline();
   const pendingOrder  = useCartStore((s) => s.pendingOrder);
   const isSyncing     = useCartStore((s) => s.isSyncing);
+
+  // Don't render on server or first client paint — localStorage data would cause hydration mismatch
+  if (!mounted) return null;
 
   // Nothing to show
   if (isOnline && !pendingOrder && !isSyncing) return null;

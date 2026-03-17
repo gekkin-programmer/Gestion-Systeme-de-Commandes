@@ -2,6 +2,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import Script from 'next/script';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
+import { AgentationWidget } from '@/components/shared/AgentationWidget';
+import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import type { Locale } from '@/lib/i18n';
 
 interface LocaleLayoutProps {
@@ -18,8 +20,11 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         {/* Lordicon web component library */}
         <Script src="https://cdn.lordicon.com/lordicon.js" strategy="beforeInteractive" />
         <NextIntlClientProvider locale={params.locale} messages={messages}>
-          <OfflineBanner />
-          {children}
+          <ThemeProvider>
+            <OfflineBanner />
+            {children}
+            <AgentationWidget />
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

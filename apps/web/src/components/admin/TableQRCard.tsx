@@ -18,9 +18,9 @@ const STATUS_LABEL: Record<string, string> = {
   RESERVED:  'Réservée',
 };
 const STATUS_COLOR: Record<string, string> = {
-  AVAILABLE: '#6fcf6f',
-  OCCUPIED:  'var(--gold)',
-  RESERVED:  'var(--cream-dim)',
+  AVAILABLE: '#C8A96E',
+  OCCUPIED:  '#C8A96E',
+  RESERVED:  '#A89880',
 };
 
 export function TableQRCard({ table, restaurantId, onUpdated }: TableQRCardProps) {

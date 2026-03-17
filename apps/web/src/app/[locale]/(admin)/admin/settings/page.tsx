@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BackButton } from '@/components/shared/BackButton';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useRestaurantStore } from '@/store/restaurantStore';
 import dk from '@/styles/dark.module.css';
 import { THEMES } from '@/hooks/useTheme';
 import type { ThemePreset } from '@repo/shared';
@@ -18,6 +19,7 @@ export default function AdminSettingsPage() {
   const { user } = useAuth();
   const restaurantId = user?.restaurantId ?? '';
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const setBrand = useRestaurantStore((s) => s.setBrand);
 
   const [loading, setLoading] = useState(true);
 
@@ -75,6 +77,7 @@ export default function AdminSettingsPage() {
     setSavedProfile(false);
     try {
       await api.patch(`/restaurants/${restaurantId}`, profileForm);
+      setBrand({ name: profileForm.name, logoUrl, themePreset: settingsForm.themePreset });
       setSavedProfile(true);
       setTimeout(() => setSavedProfile(false), 3000);
     } finally {
@@ -93,7 +96,9 @@ export default function AdminSettingsPage() {
       const { data } = await api.post(`/restaurants/${restaurantId}/logo`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setLogoUrl(data.data.logoUrl);
+      const newLogoUrl = data.data.logoUrl;
+      setLogoUrl(newLogoUrl);
+      setBrand({ name: profileForm.name, logoUrl: newLogoUrl, themePreset: settingsForm.themePreset });
       setLogoSuccess(true);
       setTimeout(() => setLogoSuccess(false), 3000);
     } finally {
@@ -108,6 +113,7 @@ export default function AdminSettingsPage() {
     setSavedSettings(false);
     try {
       await api.patch(`/restaurants/${restaurantId}/settings`, settingsForm);
+      setBrand({ name: profileForm.name, logoUrl, themePreset: settingsForm.themePreset });
       setSavedSettings(true);
       setTimeout(() => setSavedSettings(false), 3000);
     } finally {

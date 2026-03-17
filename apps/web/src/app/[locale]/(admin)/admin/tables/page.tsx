@@ -44,9 +44,10 @@ export default function TablesAdminPage() {
   const [occupancy, setOccupancy] = useState<TableWithOccupancy[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [occLoading, setOccLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ number: '', label: '', capacity: '4' });
+  const [creating,     setCreating]     = useState(false);
+  const [showForm,     setShowForm]     = useState(false);
+  const [formData,     setFormData]     = useState({ number: '', label: '', capacity: '4' });
+  const [createError,  setCreateError]  = useState<string | null>(null);
 
   // Load QR tables list
   useEffect(() => {
@@ -78,6 +79,7 @@ export default function TablesAdminPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
+    setCreateError(null);
     try {
       const { data } = await api.post(`/tables/${restaurantId}`, {
         number:   parseInt(formData.number),
@@ -87,6 +89,9 @@ export default function TablesAdminPage() {
       setTables((prev) => [...prev, data.data]);
       setShowForm(false);
       setFormData({ number: '', label: '', capacity: '4' });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Erreur lors de la création.';
+      setCreateError(msg);
     } finally {
       setCreating(false);
     }
@@ -173,6 +178,11 @@ export default function TablesAdminPage() {
                       value={formData.capacity}
                       onChange={(e) => setFormData((p) => ({ ...p, capacity: e.target.value }))} />
                   </div>
+                  {createError && (
+                    <div className={dk.errorBox} style={{ marginBottom: 12 }}>
+                      <span className={dk.errorText}>{createError}</span>
+                    </div>
+                  )}
                   <button type="submit" className={dk.btn} disabled={creating} style={{ width: '100%', marginTop: 4 }}>
                     {creating ? 'Création…' : 'Créer la table'}
                   </button>

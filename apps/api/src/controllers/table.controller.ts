@@ -59,10 +59,19 @@ export async function listTables(req: Request, res: Response): Promise<void> {
 
 export async function createTable(req: Request, res: Response): Promise<void> {
   const data = CreateTableSchema.parse(req.body);
-  const table = await prisma.table.create({
-    data: { ...data, restaurantId: req.params.restaurantId },
-  });
-  res.status(201).json({ success: true, data: table });
+  try {
+    const table = await prisma.table.create({
+      data: { ...data, restaurantId: req.params.restaurantId },
+    });
+    res.status(201).json({ success: true, data: table });
+  } catch (err: unknown) {
+    const isPrismaUnique = (err as { code?: string })?.code === 'P2002';
+    if (isPrismaUnique) {
+      res.status(409).json({ success: false, error: `Une table avec le numéro ${data.number} existe déjà.` });
+    } else {
+      throw err;
+    }
+  }
 }
 
 export async function updateTable(req: Request, res: Response): Promise<void> {

@@ -5,15 +5,9 @@
 
 /* ─── Page shell ──────────────────────────────── */
 .page {
-  --bg:       #100C07;
-  --surface:  #1C1510;
-  --cream:    #F0E6D3;
-  --cream-dim:#A89880;
-  --line:     rgba(240, 230, 211, 0.1);
-  --gold:     #C8A96E;
-
-  background: var(--bg);
-  color: var(--cream);
+  /* CSS vars are set by ThemeProvider — fallbacks = Dark Gold defaults */
+  background: var(--bg, #100C07);
+  color: var(--cream, #F0E6D3);
   min-height: 100vh;
   font-family: 'Jost', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -193,6 +187,7 @@
   border-radius: 0;
 }
 .btn:hover { background: #d4b87e; }
+.btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btnOutline {
@@ -563,6 +558,26 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+@keyframes blob1 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33%       { transform: translate(60px, -40px) scale(1.1); }
+  66%       { transform: translate(-30px, 50px) scale(0.95); }
+}
+@keyframes blob2 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33%       { transform: translate(-50px, 30px) scale(1.08); }
+  66%       { transform: translate(40px, -60px) scale(1.05); }
+}
+@keyframes blob3 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  50%       { transform: translate(-40px, -30px) scale(1.12); }
+}
+
+@keyframes rippleFade {
+  from { opacity: 1; transform: scale(0.8); }
+  to   { opacity: 0; transform: scale(1.4); }
 }
 
 @keyframes toastIn {

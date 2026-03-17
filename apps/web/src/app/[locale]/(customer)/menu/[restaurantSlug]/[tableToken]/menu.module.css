@@ -438,23 +438,6 @@
   flex: none;
 }
 
-.dishMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.metaItem {
-  font-family: 'Jost', sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
-  border: 1px solid rgba(200, 169, 110, 0.25);
-  padding: 2px 8px;
-}
-
 .cardDivider {
   height: 1px;
   background: var(--line);
@@ -464,7 +447,8 @@
 .metaGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px 16px;
+  gap: 10px 16px;
+  margin-top: 6px;
 }
 
 .metaItem {
@@ -597,18 +581,22 @@
 }
 
 /* ─────────────────────────────────────────
-   VARIANT B  — Full-bleed image background
+   VARIANT B  — Horizontal: image left, text right
 ───────────────────────────────────────── */
 .cardB {
-  position: relative;
-  height: 300px;
+  display: flex;
+  flex-direction: row;
   overflow: hidden;
+  background: var(--surface, #1C1510);
+  border: 1px solid var(--line, rgba(240,230,211,0.08));
 }
 
 .cardBImage {
-  position: absolute;
-  inset: 0;
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
   overflow: hidden;
+  position: relative;
 }
 .cardBImage img {
   width: 100%;
@@ -619,46 +607,26 @@
 }
 .cardB:hover .cardBImage img { transform: scale(1.06); }
 
-.cardBOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(16, 12, 7, 0.97) 0%,
-    rgba(16, 12, 7, 0.6) 40%,
-    rgba(16, 12, 7, 0.15) 70%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
 .cardBContent {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 24px;
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  z-index: 2;
+  gap: 6px;
+  justify-content: space-between;
 }
 
 .popularBadge {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+  display: inline-flex;
+  align-self: flex-start;
   border: 1px solid var(--gold);
   color: var(--gold);
   font-family: 'Jost', sans-serif;
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 2px;
-  background: rgba(16, 12, 7, 0.65);
-  backdrop-filter: blur(4px);
-  z-index: 3;
+  padding: 2px 8px;
 }
 
 .cardBPriceRow {
@@ -666,6 +634,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-top: auto;
 }
 
 /* ─────────────────────────────────────────
@@ -735,7 +704,7 @@
     grid-template-rows: 220px auto;
     min-height: auto;
   }
-  .cardB { height: 260px; }
+  .cardBImage { width: 100px; height: 100px; }
   .hero { padding: 0 20px 36px; }
   .scrollHint, .liveTime { display: none; }
   .sectionHeader { padding: 0 16px; }

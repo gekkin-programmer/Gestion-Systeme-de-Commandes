@@ -50,22 +50,47 @@ export async function uploadLogo(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: 'restaurant-logos' },
-      (err, result) => {
-        if (err || !result) return reject(err ?? new Error('Upload failed'));
-        resolve(result);
-      },
-    );
-    stream.end(req.file!.buffer);
-  });
+  let logoUrl: string;
+
+  // Try Cloudinary if configured
+  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    try {
+      const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'restaurant-logos' },
+          (err, result) => {
+            if (err || !result) return reject(err ?? new Error('Upload failed'));
+            resolve(result);
+          },
+        );
+        stream.end(req.file!.buffer);
+      });
+      logoUrl = uploadResult.secure_url;
+    } catch {
+      // Fall through to local
+      logoUrl = await saveLogoLocally(req);
+    }
+  } else {
+    logoUrl = await saveLogoLocally(req);
+  }
 
   const restaurant = await prisma.restaurant.update({
     where: { id: req.params.id },
-    data: { logoUrl: uploadResult.secure_url },
+    data: { logoUrl },
   });
-  res.json({ success: true, data: restaurant });
+  res.json({ success: true, data: { logoUrl: restaurant.logoUrl } });
+}
+
+async function saveLogoLocally(req: Request): Promise<string> {
+  const fs   = await import('fs');
+  const path = await import('path');
+  const UPLOAD_DIR = path.resolve(process.cwd(), '../../uploads');
+  if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const ext      = req.file!.mimetype.split('/')[1] ?? 'jpg';
+  const filename = `logo-${Date.now()}.${ext}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, filename), req.file!.buffer);
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  return `${baseUrl}/api/v1/uploads/${filename}`;
 }
 
 export async function updateSettings(req: Request, res: Response): Promise<void> {

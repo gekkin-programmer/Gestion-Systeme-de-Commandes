@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
 
 export const multerUpload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -51,5 +51,6 @@ export async function uploadImage(req: Request, res: Response): Promise<void> {
   }
 
   // Local fallback — served via express.static at /api/v1/uploads
-  res.json({ success: true, data: { url: `/api/v1/uploads/${file.filename}` } });
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({ success: true, data: { url: `${baseUrl}/api/v1/uploads/${file.filename}` } });
 }
