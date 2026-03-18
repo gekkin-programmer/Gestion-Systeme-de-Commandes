@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useRestaurantSocket } from '@/hooks/useSocket';
@@ -50,6 +51,7 @@ const STATUS_LABEL_FR: Partial<Record<OrderStatus, string>> = {
 
 export default function KitchenDisplayPage() {
   const locale          = useLocale();
+  const router          = useRouter();
   const { user, accessToken, logout } = useAuth();
   const restaurantId    = user?.restaurantId ?? '';
 
@@ -178,6 +180,9 @@ export default function KitchenDisplayPage() {
       {/* Header */}
       <header className={dk.header} style={{ height: 64 }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button className={dk.backBtn} onClick={() => router.push(`/${locale}/staff/orders`)}>
+            ← Retour
+          </button>
           <span
             className={dk.playfair}
             style={{ fontSize: 20, color: 'var(--cream)', lineHeight: 1 }}

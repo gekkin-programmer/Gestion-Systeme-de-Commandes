@@ -117,6 +117,7 @@ export default function OrderPage({ params }: OrderPageProps) {
   const isCancelled = order.status === 'CANCELLED';
   const isServed    = order.status === 'SERVED';
   const isPending   = order.status === 'PENDING';
+  const isReady     = order.status === 'READY';
   const isCash      = order.payment?.method === 'CASH';
 
   return (
@@ -199,11 +200,15 @@ export default function OrderPage({ params }: OrderPageProps) {
           {!isCancelled && !isPaid && isCash && (
             <button
               className={dk.btn}
-              style={{ width: '100%' }}
-              disabled={confirming}
+              style={{ width: '100%', opacity: isReady ? 1 : 0.4, cursor: isReady ? 'pointer' : 'not-allowed' }}
+              disabled={confirming || !isReady}
               onClick={handleCashReceipt}
             >
-              {confirming ? 'Confirmation…' : `Reçu — ${formatPrice(order.totalAmount)}`}
+              {confirming
+                ? 'Confirmation…'
+                : isReady
+                  ? `Reçu — ${formatPrice(order.totalAmount)}`
+                  : 'En attente de livraison…'}
             </button>
           )}
           {!isCancelled && !isPaid && !isCash && (
