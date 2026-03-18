@@ -206,6 +206,19 @@ function DishCardB({ dish, lang, qty, onAdd, onDecrease, index }: CardProps) {
   );
 }
 
+// ─── Loading skeleton ──────────────────────────────────────────────────────────
+
+function MenuSkeleton() {
+  return (
+    <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: '100dvh' }}>
+      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(200,169,110,0.15)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+      <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 13, color: 'var(--cream-dim)', letterSpacing: '0.08em' }}>
+        Chargement du menu…
+      </p>
+    </div>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 interface MenuPageProps {
