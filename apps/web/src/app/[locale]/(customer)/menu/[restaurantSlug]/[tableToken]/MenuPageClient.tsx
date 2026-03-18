@@ -229,7 +229,6 @@ export default function MenuPage({ params }: MenuPageProps) {
   const localeFromNextIntl = useLocale();
   const router = useRouter();
 
-  const lang = storedLang ?? (localeFromNextIntl === 'en' ? 'en' : 'fr');
   const [activeCategory, setActiveCategory] = useState('all');
   const [currentTime, setCurrentTime]       = useState('');
   const [mounted, setMounted]               = useState(false);
@@ -238,6 +237,7 @@ export default function MenuPage({ params }: MenuPageProps) {
   const [loadError,  setLoadError]  = useState<string | null>(null);
 
   const { items, addItem, updateQuantity, setSession, getTotalItems, getSubtotal, lang: storedLang, setLang } = useCartStore();
+  const lang = storedLang ?? (localeFromNextIntl === 'en' ? 'en' : 'fr');
   const { setBrand } = useRestaurantStore();
   const themeStyle = useTheme();
 
