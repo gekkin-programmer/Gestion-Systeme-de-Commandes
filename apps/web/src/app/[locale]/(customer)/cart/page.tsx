@@ -40,6 +40,8 @@ const t = {
     phoneRequired:   'Veuillez saisir votre numéro de téléphone pour le paiement Mobile Money.',
     genericError:    'Une erreur est survenue. Veuillez réessayer.',
     staleCart:       'Panier expiré. Retournez au menu pour ajouter vos articles.',
+    orderConfirmed:  'Commande confirmée !',
+    redirecting:     'Redirection en cours…',
     queuedTitle:     'Commande enregistrée.',
     queuedBody:      'Elle sera envoyée automatiquement dès le retour du réseau.',
   },
@@ -70,6 +72,8 @@ const t = {
     phoneRequired:   'Please enter your phone number for Mobile Money payment.',
     genericError:    'An error occurred. Please try again.',
     staleCart:       'Cart expired. Go back to the menu to add your items.',
+    orderConfirmed:  'Order placed!',
+    redirecting:     'Redirecting…',
     queuedTitle:     'Order saved.',
     queuedBody:      'It will be sent automatically when your connection is restored.',
   },
@@ -88,15 +92,40 @@ export default function CartPage() {
 
   const tx = t[lang ?? 'fr'];
 
-  const [method,   setMethod]  = useState<PaymentMethod>(PAYMENT_METHOD.CASH);
-  const [loading,  setLoading] = useState(false);
-  const [error,    setError]   = useState('');
-  const [queued,   setQueued]  = useState(false);
-  const [mounted,  setMounted] = useState(false);
+  const [method,        setMethod]       = useState<PaymentMethod>(PAYMENT_METHOD.CASH);
+  const [loading,       setLoading]      = useState(false);
+  const [error,         setError]        = useState('');
+  const [queued,        setQueued]       = useState(false);
+  const [mounted,       setMounted]      = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
+  // Navigate to order tracking page after successful order (replaces history so back skips cart)
+  useEffect(() => {
+    if (placedOrderId) {
+      router.replace(`/${locale}/order/${placedOrderId}`);
+    }
+  }, [placedOrderId, locale, router]);
+
   if (!mounted) return null;
+
+  // Order was just placed — show confirmation screen while router.replace fires
+  if (placedOrderId) {
+    return (
+      <div
+        className={dk.page}
+        style={{ ...themeStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}
+      >
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span className={dk.playfair} style={{ fontSize: 22, color: 'var(--gold)' }}>{tx.orderConfirmed}</span>
+        <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 14, color: 'var(--cream-dim)' }}>{tx.redirecting}</p>
+      </div>
+    );
+  }
 
   const total = getSubtotal();
 
@@ -165,7 +194,7 @@ export default function CartPage() {
       }
 
       clearCart();
-      router.push(`/${locale}/order/${orderId}`);
+      setPlacedOrderId(orderId);
     } catch (err: any) {
       if (!navigator.onLine) {
         queueOrder();
