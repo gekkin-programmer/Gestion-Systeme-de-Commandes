@@ -13,7 +13,7 @@ const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
   REDIS_URL: z.string().default('redis://localhost:6379'),
-  TABLE_SESSION_TTL_HOURS: z.coerce.number().default(4),
+  TABLE_SESSION_TTL_HOURS: z.coerce.number().default(1),
   // Prisma connection pool — tune per server CPU count
   DATABASE_POOL_SIZE: z.coerce.number().default(10),
   SUPER_ADMIN_EMAIL: z.string().email().optional(),
