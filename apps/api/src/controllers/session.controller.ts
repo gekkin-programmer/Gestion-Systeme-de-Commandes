@@ -9,7 +9,12 @@ import { emitTableStatusChanged } from '../services/notification.service';
 const ACTIVE_ORDER_STATUSES = ['PENDING', 'PREPARING', 'READY'] as const;
 
 export async function startSession(req: Request, res: Response): Promise<void> {
-  const { tableToken, customerPhone } = StartSessionSchema.parse(req.body);
+  const parsed = StartSessionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ success: false, error: 'Invalid request', details: parsed.error.flatten().fieldErrors });
+    return;
+  }
+  const { tableToken, customerPhone } = parsed.data;
 
   // Per-QR-token rate limit: max 20 new sessions per hour per table
   // Prevents someone from hammering a specific QR code to flood the DB

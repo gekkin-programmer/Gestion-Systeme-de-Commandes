@@ -5,7 +5,16 @@ import { generateOrderNumber } from '../services/payment.service';
 import { emitNewOrder, emitOrderStatusChanged } from '../services/notification.service';
 
 export async function createOrder(req: Request, res: Response): Promise<void> {
-  const { sessionToken, items, notes, customerPhone } = CreateOrderSchema.parse(req.body);
+  const parsed = CreateOrderSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      success: false,
+      error: 'Invalid order data',
+      details: parsed.error.flatten().fieldErrors,
+    });
+    return;
+  }
+  const { sessionToken, items, notes, customerPhone } = parsed.data;
 
   const session = await prisma.tableSession.findUnique({
     where: { sessionToken },
