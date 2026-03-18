@@ -51,6 +51,16 @@ export const paymentRateLimiter = rateLimit({
   message: { success: false, error: 'Too many payment attempts, please try again later' },
 });
 
+// 5 session starts / 5 min per IP — QR scan abuse protection
+export const sessionRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: makeStore('session'),
+  message: { success: false, error: 'Too many scan attempts, please wait a moment' },
+});
+
 // 60 requests / 15 min — admin mutation endpoints
 export const adminRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
