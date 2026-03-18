@@ -104,7 +104,8 @@ export function OrderKanbanBoard({ orders, onStatusChange, pendingIds }: OrderKa
                     {nextStatus && (
                       <button
                         className={dk.btn}
-                        style={{ width: '100%', fontSize: 9, padding: '10px 12px', marginBottom: 6 }}
+                        style={{ width: '100%', fontSize: 9, padding: '10px 12px', marginBottom: 6, opacity: pendingIds?.has(order.id) ? 0.5 : 1 }}
+                        disabled={pendingIds?.has(order.id)}
                         onClick={() => onStatusChange(order.id, nextStatus)}
                       >
                         {t(nextStatus as any)}
@@ -114,7 +115,8 @@ export function OrderKanbanBoard({ orders, onStatusChange, pendingIds }: OrderKa
                     {status === 'PENDING' && (
                       <button
                         className={dk.btnDanger}
-                        style={{ width: '100%', fontSize: 9, padding: '8px 12px' }}
+                        style={{ width: '100%', fontSize: 9, padding: '8px 12px', opacity: pendingIds?.has(order.id) ? 0.5 : 1 }}
+                        disabled={pendingIds?.has(order.id)}
                         onClick={() => onStatusChange(order.id, ORDER_STATUS.CANCELLED)}
                       >
                         Annuler

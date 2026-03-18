@@ -107,7 +107,7 @@ export async function updateOrderStatus(req: Request, res: Response): Promise<vo
   const order = await prisma.order.update({
     where: { id: req.params.id },
     data: { status },
-    include: { items: true, payment: true, tableSession: true },
+    include: { items: true, payment: true, tableSession: { include: { table: true } } },
   });
 
   emitOrderStatusChanged(order.restaurantId, order.tableSessionId, order);
@@ -184,7 +184,7 @@ export async function cancelOrderByCustomer(req: Request, res: Response): Promis
   const updated = await prisma.order.update({
     where: { id: order.id },
     data: { status: 'CANCELLED' },
-    include: { items: true, payment: true, tableSession: true },
+    include: { items: true, payment: true, tableSession: { include: { table: true } } },
   });
 
   emitOrderStatusChanged(order.restaurantId, order.tableSessionId, updated);

@@ -20,8 +20,8 @@ const options: {
 }[] = [
   {
     method:  PAYMENT_METHOD.CASH,
-    labelFr: 'Payer à la réception',
-    subFr:   'Règlement en espèces à la livraison',
+    labelFr: 'Payer en espèces',
+    subFr:   'Règlement en espèces lors de la livraison',
     logo: (
       <div
         style={{

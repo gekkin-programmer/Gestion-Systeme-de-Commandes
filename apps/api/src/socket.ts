@@ -52,8 +52,8 @@ export function initializeSocket(io: Server): void {
           where: { sessionToken: payload.sessionToken },
         });
 
-        if (!session || !session.isActive || session.expiresAt < new Date()) {
-          socket.emit('error', { message: 'Invalid or expired session' });
+        if (!session) {
+          socket.emit('error', { message: 'Session not found' });
           return;
         }
 

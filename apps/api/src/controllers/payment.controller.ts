@@ -109,7 +109,7 @@ export async function confirmCashReceipt(req: Request, res: Response): Promise<v
   const servedOrder = await prisma.order.update({
     where: { id: payment.orderId },
     data: { status: 'SERVED' },
-    include: { items: true, payment: true, tableSession: true },
+    include: { items: true, payment: true, tableSession: { include: { table: true } } },
   });
 
   emitPaymentStatusChanged(payment.order.tableSessionId, updated);
@@ -200,7 +200,7 @@ export async function refundPayment(req: Request, res: Response): Promise<void> 
   const cancelledOrder = await prisma.order.update({
     where: { id: payment.orderId },
     data: { status: 'CANCELLED' },
-    include: { items: true, payment: true, tableSession: true },
+    include: { items: true, payment: true, tableSession: { include: { table: true } } },
   });
 
   emitPaymentStatusChanged(payment.order.tableSessionId, updatedPayment);
