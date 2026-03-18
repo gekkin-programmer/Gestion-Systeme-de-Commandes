@@ -12,16 +12,79 @@ import api from '@/lib/api';
 import dk from '@/styles/dark.module.css';
 import { PAYMENT_METHOD, type PaymentMethod } from '@repo/shared';
 
+const t = {
+  fr: {
+    yourCart:        'Votre panier',
+    myCart:          'Mon panier',
+    empty:           'Votre panier est vide',
+    backToMenu:      '← Retour au menu',
+    back:            '← Menu',
+    article:         'article',
+    articles:        'articles',
+    specialInstr:    'Instructions spéciales',
+    instrLabel:      'Transmises au restaurant avec la commande',
+    instrPlaceholder:'Ex : sans piment, allergie aux noix, cuisson bien cuite…',
+    contact:         'Coordonnées',
+    phone:           'Numéro de téléphone',
+    phoneOpt:        ' (optionnel)',
+    phoneReq:        ' *',
+    phonePlaceholder:'+237 6XX XXX XXX',
+    payment:         'Mode de paiement',
+    total:           'Total',
+    payCash:         'Payer à la réception',
+    payNow:          'Payer maintenant',
+    send:            'Envoi…',
+    waiting:         'En attente…',
+    order:           'Commander',
+    sessionExpired:  'Session expirée. Retournez au menu et scannez à nouveau le QR code.',
+    phoneRequired:   'Veuillez saisir votre numéro de téléphone pour le paiement Mobile Money.',
+    genericError:    'Une erreur est survenue. Veuillez réessayer.',
+    queuedTitle:     'Commande enregistrée.',
+    queuedBody:      'Elle sera envoyée automatiquement dès le retour du réseau.',
+  },
+  en: {
+    yourCart:        'Your cart',
+    myCart:          'My cart',
+    empty:           'Your cart is empty',
+    backToMenu:      '← Back to menu',
+    back:            '← Menu',
+    article:         'item',
+    articles:        'items',
+    specialInstr:    'Special instructions',
+    instrLabel:      'Sent to the restaurant with your order',
+    instrPlaceholder:'E.g. no spice, nut allergy, well done…',
+    contact:         'Contact',
+    phone:           'Phone number',
+    phoneOpt:        ' (optional)',
+    phoneReq:        ' *',
+    phonePlaceholder:'+237 6XX XXX XXX',
+    payment:         'Payment method',
+    total:           'Total',
+    payCash:         'Pay at the counter',
+    payNow:          'Pay now',
+    send:            'Sending…',
+    waiting:         'Pending…',
+    order:           'Place order',
+    sessionExpired:  'Session expired. Go back to the menu and scan the QR code again.',
+    phoneRequired:   'Please enter your phone number for Mobile Money payment.',
+    genericError:    'An error occurred. Please try again.',
+    queuedTitle:     'Order saved.',
+    queuedBody:      'It will be sent automatically when your connection is restored.',
+  },
+} as const;
+
 export default function CartPage() {
   const locale = useLocale();
   const router = useRouter();
   const themeStyle = useTheme();
 
   const {
-    items, sessionToken, notes, customerPhone,
+    items, sessionToken, notes, customerPhone, lang,
     setNotes, setCustomerPhone, clearCart, getSubtotal,
     setPendingOrder, pendingOrder,
   } = useCartStore();
+
+  const tx = t[lang ?? 'fr'];
 
   const [method,   setMethod]  = useState<PaymentMethod>(PAYMENT_METHOD.CASH);
   const [loading,  setLoading] = useState(false);
@@ -31,9 +94,6 @@ export default function CartPage() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Prevent hydration mismatch: Zustand persist rehydrates localStorage
-  // synchronously on the client, so items/totals differ from server render.
-  // Both server and client render null until after mount.
   if (!mounted) return null;
 
   const total = getSubtotal();
@@ -44,7 +104,6 @@ export default function CartPage() {
 
   const queueOrder = () => {
     if (!sessionToken) return;
-    // Prevent double-queue
     if (pendingOrder) return;
     setPendingOrder({
       items,
@@ -60,15 +119,14 @@ export default function CartPage() {
 
   const placeOrder = async () => {
     if (!sessionToken) {
-      setError('Session expirée. Retournez au menu et scannez à nouveau le QR code.');
+      setError(tx.sessionExpired);
       return;
     }
     if (isMobileMoney && !customerPhone.trim()) {
-      setError('Veuillez saisir votre numéro de téléphone pour le paiement Mobile Money.');
+      setError(tx.phoneRequired);
       return;
     }
 
-    // Offline before even trying → queue immediately
     if (!navigator.onLine) {
       queueOrder();
       return;
@@ -77,7 +135,6 @@ export default function CartPage() {
     setLoading(true);
     setError('');
     try {
-      /* 1 — Place the order (notes flow to the kitchen automatically) */
       const { data } = await api.post('/orders', {
         sessionToken,
         items:         items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
@@ -86,14 +143,12 @@ export default function CartPage() {
       });
       const orderId: string = data.data.id;
 
-      /* 2 — Initiate payment */
       await api.post('/payments/initiate', {
         orderId,
         method,
         mobileMoneyPhone: isMobileMoney ? customerPhone.trim() : undefined,
       });
 
-      /* 3 — Auto-confirm mobile money (mock) */
       if (isMobileMoney) {
         await api.post(`/payments/callback/mock/${orderId}?simulate=success`);
       }
@@ -101,12 +156,11 @@ export default function CartPage() {
       clearCart();
       router.push(`/${locale}/order/${orderId}`);
     } catch (err: any) {
-      // Only queue when the device is genuinely offline
       if (!navigator.onLine) {
         queueOrder();
         return;
       }
-      setError(err?.response?.data?.error ?? 'Une erreur est survenue. Veuillez réessayer.');
+      setError(err?.response?.data?.error ?? tx.genericError);
     } finally {
       setLoading(false);
     }
@@ -119,12 +173,12 @@ export default function CartPage() {
         className={dk.page}
         style={{ ...themeStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 20 }}
       >
-        <span className={dk.sectionLabel}>Votre panier</span>
+        <span className={dk.sectionLabel}>{tx.yourCart}</span>
         <p className={dk.playfair} style={{ fontSize: 20, color: 'var(--cream-dim)' }}>
-          Votre panier est vide
+          {tx.empty}
         </p>
         <button className={dk.btnOutline} onClick={() => router.back()}>
-          ← Retour au menu
+          {tx.backToMenu}
         </button>
       </div>
     );
@@ -137,12 +191,12 @@ export default function CartPage() {
       {/* Sticky header */}
       <header className={dk.header}>
         <button className={dk.backBtn} onClick={() => router.back()}>
-          ← Menu
+          {tx.back}
         </button>
-        <span className={dk.headerTitle}>Mon panier</span>
+        <span className={dk.headerTitle}>{tx.myCart}</span>
         <div className={dk.headerRight}>
           <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, color: 'var(--gold)' }}>
-            {items.length} article{items.length > 1 ? 's' : ''}
+            {items.length} {items.length > 1 ? tx.articles : tx.article}
           </span>
         </div>
       </header>
@@ -156,19 +210,19 @@ export default function CartPage() {
           ))}
         </div>
 
-        {/* Instructions spéciales — transmitted to kitchen */}
+        {/* Special instructions */}
         <div className={dk.card}>
-          <span className={dk.sectionLabel}>Instructions spéciales</span>
+          <span className={dk.sectionLabel}>{tx.specialInstr}</span>
           <div className={dk.inputGroup} style={{ marginBottom: 0 }}>
             <label className={dk.inputLabel} htmlFor="notes">
-              Transmises au restaurant avec la commande
+              {tx.instrLabel}
             </label>
             <textarea
               id="notes"
               className={dk.input}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex : sans piment, allergie aux noix, cuisson bien cuite…"
+              placeholder={tx.instrPlaceholder}
               rows={2}
               style={{ resize: 'vertical', fontFamily: 'Jost, sans-serif' }}
             />
@@ -177,10 +231,10 @@ export default function CartPage() {
 
         {/* Phone number */}
         <div className={dk.card}>
-          <span className={dk.sectionLabel}>Coordonnées</span>
+          <span className={dk.sectionLabel}>{tx.contact}</span>
           <div className={dk.inputGroup} style={{ marginBottom: 0 }}>
             <label className={dk.inputLabel} htmlFor="phone">
-              Numéro de téléphone{isMobileMoney ? ' *' : ' (optionnel)'}
+              {tx.phone}{isMobileMoney ? tx.phoneReq : tx.phoneOpt}
             </label>
             <input
               id="phone"
@@ -188,21 +242,21 @@ export default function CartPage() {
               className={dk.input}
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
-              placeholder="+237 6XX XXX XXX"
+              placeholder={tx.phonePlaceholder}
             />
           </div>
         </div>
 
         {/* Payment method */}
         <div className={dk.card}>
-          <span className={dk.sectionLabel}>Mode de paiement</span>
+          <span className={dk.sectionLabel}>{tx.payment}</span>
           <PaymentMethodSelector value={method} onChange={setMethod} />
         </div>
 
         {/* Total */}
         <div className={dk.card} style={{ marginBottom: 0 }}>
           <div className={dk.row} style={{ borderBottom: 'none', paddingBottom: 0 }}>
-            <span className={dk.rowLabel} style={{ fontSize: 13, color: 'var(--cream)' }}>Total</span>
+            <span className={dk.rowLabel} style={{ fontSize: 13, color: 'var(--cream)' }}>{tx.total}</span>
             <span className={dk.rowTotal}>{formatPrice(total)}</span>
           </div>
         </div>
@@ -241,8 +295,8 @@ export default function CartPage() {
               <line x1="12" y1="20" x2="12.01" y2="20" />
             </svg>
             <span>
-              <strong style={{ color: 'var(--gold)' }}>Commande enregistrée.</strong><br />
-              Elle sera envoyée automatiquement dès le retour du réseau.
+              <strong style={{ color: 'var(--gold)' }}>{tx.queuedTitle}</strong><br />
+              {tx.queuedBody}
             </span>
           </div>
         )}
@@ -252,7 +306,7 @@ export default function CartPage() {
       <div className={dk.fixedBar}>
         <div className={dk.fixedBarInfo}>
           <span className={dk.fixedBarLabel}>
-            {method === PAYMENT_METHOD.CASH ? 'Payer à la réception' : 'Payer maintenant'}
+            {method === PAYMENT_METHOD.CASH ? tx.payCash : tx.payNow}
           </span>
           <span className={dk.fixedBarPrice}>{formatPrice(total)}</span>
         </div>
@@ -261,7 +315,7 @@ export default function CartPage() {
           disabled={loading || queued}
           onClick={placeOrder}
         >
-          {loading ? 'Envoi…' : queued ? 'En attente…' : 'Commander'}
+          {loading ? tx.send : queued ? tx.waiting : tx.order}
         </button>
       </div>
     </div>

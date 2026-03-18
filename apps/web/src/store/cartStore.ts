@@ -20,12 +20,14 @@ interface CartState {
   customerPhone: string;
   pendingOrder: PendingOrder | null;
   isSyncing: boolean;
+  lang: 'fr' | 'en';
 
   addItem: (item: CartItem) => void;
   removeItem: (menuItemId: string) => void;
   updateQuantity: (menuItemId: string, quantity: number) => void;
   clearCart: () => void;
   setSession: (token: string, slug: string) => void;
+  setLang: (lang: 'fr' | 'en') => void;
   setNotes: (notes: string) => void;
   setCustomerPhone: (phone: string) => void;
   getTotalItems: () => number;
@@ -45,6 +47,7 @@ export const useCartStore = create<CartState>()(
       customerPhone: '',
       pendingOrder: null,
       isSyncing: false,
+      lang: 'fr',
 
       addItem: (newItem) => {
         set((state) => {
@@ -77,7 +80,17 @@ export const useCartStore = create<CartState>()(
 
       clearCart: () => set({ items: [], notes: '', customerPhone: '' }),
 
-      setSession: (token, slug) => set({ sessionToken: token, restaurantSlug: slug }),
+      setSession: (token, slug) => {
+        const current = get().sessionToken;
+        // New session (different token) → clear stale cart items
+        if (current && current !== token) {
+          set({ items: [], notes: '', customerPhone: '', pendingOrder: null, sessionToken: token, restaurantSlug: slug });
+        } else {
+          set({ sessionToken: token, restaurantSlug: slug });
+        }
+      },
+
+      setLang: (lang) => set({ lang }),
 
       setNotes: (notes) => set({ notes }),
 
@@ -101,6 +114,7 @@ export const useCartStore = create<CartState>()(
         notes: state.notes,
         customerPhone: state.customerPhone,
         pendingOrder: state.pendingOrder,
+        lang: state.lang,
       }),
     },
   ),
