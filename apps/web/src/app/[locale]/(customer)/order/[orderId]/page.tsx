@@ -29,7 +29,7 @@ const STATUS_TOAST: Partial<Record<OrderStatus, { msg: string; color: string }>>
   PREPARING: { msg: 'Préparation en cours…',                  color: 'var(--gold)' },
   READY:     { msg: 'Votre commande est prête !',             color: '#4ade80'     },
   SERVED:    { msg: 'Bon appétit ! Merci pour votre visite.', color: '#4ade80'     },
-  CANCELLED: { msg: 'Commande annulée.',                      color: '#f87171'     },
+  CANCELLED: { msg: 'Commande annulée.',                      color: 'var(--gold)' },
 };
 
 interface OrderPageProps {
@@ -39,13 +39,15 @@ interface OrderPageProps {
 export default function OrderPage({ params }: OrderPageProps) {
   const locale       = useLocale();
   const router       = useRouter();
-  const sessionToken = useCartStore((s) => s.sessionToken);
-  const themeStyle   = useTheme();
+  const sessionToken   = useCartStore((s) => s.sessionToken);
+  const restaurantSlug = useCartStore((s) => s.restaurantSlug);
+  const themeStyle     = useTheme();
 
   const [order,      setOrder]      = useState<OrderDTO | null>(null);
   const [loading,    setLoading]    = useState(true);
   const [toast,      setToast]      = useState<{ msg: string; color: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     api.get(`/orders/${params.orderId}/status`)
@@ -78,11 +80,27 @@ export default function OrderPage({ params }: OrderPageProps) {
     try {
       await api.post(`/orders/${order.id}/cancel`, { sessionToken });
       setOrder((prev: OrderDTO | null) => prev ? { ...prev, status: 'CANCELLED' as OrderStatus } : prev);
-      setToast({ msg: 'Commande annulée.', color: '#f87171' });
+      setToast({ msg: 'Commande annulée.', color: 'var(--gold)' });
     } catch {
-      setToast({ msg: "Impossible d'annuler la commande.", color: '#f87171' });
+      setToast({ msg: "Impossible d'annuler la commande.", color: 'var(--gold)' });
     } finally {
       setCancelling(false);
+    }
+  }, [sessionToken, order]);
+
+  const handleCashReceipt = useCallback(async () => {
+    if (!sessionToken || !order) return;
+    setConfirming(true);
+    try {
+      await api.post(`/payments/${order.id}/cash-receipt`, { sessionToken });
+      setOrder((prev: OrderDTO | null) =>
+        prev ? { ...prev, status: 'SERVED' as OrderStatus, payment: prev.payment ? { ...prev.payment, status: 'PAID' } : prev.payment } : prev
+      );
+      setToast({ msg: 'Reçu confirmé — Bon appétit !', color: '#4ade80' });
+    } catch {
+      setToast({ msg: 'Impossible de confirmer le reçu.', color: 'var(--gold)' });
+    } finally {
+      setConfirming(false);
     }
   }, [sessionToken, order]);
 
@@ -99,6 +117,7 @@ export default function OrderPage({ params }: OrderPageProps) {
   const isCancelled = order.status === 'CANCELLED';
   const isServed    = order.status === 'SERVED';
   const isPending   = order.status === 'PENDING';
+  const isCash      = order.payment?.method === 'CASH';
 
   return (
     <div className={dk.page} style={themeStyle}>
@@ -109,7 +128,7 @@ export default function OrderPage({ params }: OrderPageProps) {
       )}
 
       <header className={dk.header}>
-        <button className={dk.backBtn} onClick={() => router.back()}>← Retour</button>
+        <button className={dk.backBtn} onClick={() => router.push(`/${locale}`)}>← Accueil</button>
         <span className={dk.headerTitle}>Ma commande</span>
         <div className={dk.headerRight}>
           <span className={dk.orderNum}>{order.orderNumber}</span>
@@ -124,7 +143,7 @@ export default function OrderPage({ params }: OrderPageProps) {
             className={dk.playfair}
             style={{
               fontSize: 22,
-              color: isCancelled ? '#f87171' : isServed ? '#4ade80' : 'var(--cream)',
+              color: isCancelled ? 'var(--gold)' : isServed ? '#4ade80' : 'var(--cream)',
               marginBottom: 6,
             }}
           >
@@ -177,7 +196,17 @@ export default function OrderPage({ params }: OrderPageProps) {
               {cancelling ? 'Annulation…' : 'Annuler ma commande'}
             </button>
           )}
-          {!isCancelled && !isPaid && (
+          {!isCancelled && !isPaid && isCash && (
+            <button
+              className={dk.btn}
+              style={{ width: '100%' }}
+              disabled={confirming}
+              onClick={handleCashReceipt}
+            >
+              {confirming ? 'Confirmation…' : `Reçu — ${formatPrice(order.totalAmount)}`}
+            </button>
+          )}
+          {!isCancelled && !isPaid && !isCash && (
             <Link href={`/${locale}/payment/${order.id}`} style={{ display: 'block' }}>
               <button className={dk.btn} style={{ width: '100%' }}>
                 Procéder au paiement — {formatPrice(order.totalAmount)}

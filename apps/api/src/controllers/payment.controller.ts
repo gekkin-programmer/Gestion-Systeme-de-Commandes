@@ -66,6 +66,58 @@ export async function initiatePayment(req: Request, res: Response): Promise<void
   res.status(201).json({ success: true, data: payment });
 }
 
+export async function confirmCashReceipt(req: Request, res: Response): Promise<void> {
+  const { sessionToken } = req.body as { sessionToken?: string };
+
+  if (!sessionToken) {
+    res.status(400).json({ success: false, error: 'sessionToken required' });
+    return;
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { orderId: req.params.orderId },
+    include: { order: { include: { tableSession: true } } },
+  });
+
+  if (!payment) {
+    res.status(404).json({ success: false, error: 'Payment not found' });
+    return;
+  }
+
+  // Validate ownership: sessionToken must match the order's session
+  if (payment.order.tableSession.sessionToken !== sessionToken) {
+    res.status(403).json({ success: false, error: 'Unauthorized' });
+    return;
+  }
+
+  // Only cash payments can be receipted by the customer
+  if (payment.method !== PaymentMethod.CASH) {
+    res.status(400).json({ success: false, error: 'Only cash payments can be confirmed this way' });
+    return;
+  }
+
+  if (payment.status === PaymentStatus.PAID) {
+    res.status(400).json({ success: false, error: 'Already confirmed' });
+    return;
+  }
+
+  const updated = await prisma.payment.update({
+    where: { id: payment.id },
+    data: { status: PaymentStatus.PAID, confirmedAt: new Date() },
+  });
+
+  const servedOrder = await prisma.order.update({
+    where: { id: payment.orderId },
+    data: { status: 'SERVED' },
+    include: { items: true, payment: true, tableSession: true },
+  });
+
+  emitPaymentStatusChanged(payment.order.tableSessionId, updated);
+  emitOrderStatusChanged(payment.order.restaurantId, payment.order.tableSessionId, servedOrder);
+
+  res.json({ success: true, data: updated });
+}
+
 export async function confirmCash(req: Request, res: Response): Promise<void> {
   const payment = await prisma.payment.findUnique({
     where: { orderId: req.params.orderId },

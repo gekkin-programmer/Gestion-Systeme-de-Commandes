@@ -9,6 +9,9 @@ const router = Router();
 // Client: initiate payment
 router.post('/initiate', paymentRateLimiter, ctrl.initiatePayment);
 
+// Customer: confirm cash receipt (plate delivered + cash collected)
+router.post('/:orderId/cash-receipt', paymentRateLimiter, ctrl.confirmCashReceipt);
+
 // Staff: confirm cash (server-side only — client can never self-confirm)
 router.post(
   '/:orderId/confirm-cash',

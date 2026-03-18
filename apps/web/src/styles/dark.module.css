@@ -211,9 +211,9 @@
 .btnOutline:hover { background: var(--gold); color: var(--bg); }
 
 .btnDanger {
-  background: rgba(239,68,68,0.12);
-  border: 1px solid rgba(239,68,68,0.4);
-  color: #f87171;
+  background: rgba(200,169,110,0.08);
+  border: 1px solid rgba(200,169,110,0.3);
+  color: #C8A96E;
   cursor: pointer;
   font-family: 'Jost', sans-serif;
   font-size: 11px;
@@ -228,7 +228,7 @@
   transition: background 0.2s;
   border-radius: 2px;
 }
-.btnDanger:hover { background: rgba(239,68,68,0.22); }
+.btnDanger:hover { background: rgba(200,169,110,0.16); }
 
 /* ─── Fixed bottom bar ────────────────────────── */
 .fixedBar {
