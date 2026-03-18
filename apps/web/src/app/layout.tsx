@@ -13,8 +13,12 @@ export const metadata: Metadata = {
   ],
 };
 
-// The [locale]/layout.tsx provides the <html lang> and <body> shell.
-// This root layout is intentionally minimal (standard next-intl pattern).
+// html/body live here as Next.js requires them in the root layout.
+// The [locale]/layout.tsx sets lang via suppressHydrationWarning.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <html suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
+    </html>
+  );
 }

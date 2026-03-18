@@ -2,15 +2,23 @@
 import { useEffect } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+interface ThemeProviderProps {
+  children: React.ReactNode;
+  locale?: string;
+}
+
+export function ThemeProvider({ children, locale }: ThemeProviderProps) {
   const vars = useTheme();
 
   useEffect(() => {
     const root = document.documentElement;
+    // Apply theme CSS vars
     Object.entries(vars).forEach(([key, value]) => {
       root.style.setProperty(key, value as string);
     });
-  }, [vars]);
+    // Restore lang attribute (moved out of [locale]/layout.tsx)
+    if (locale) root.setAttribute('lang', locale);
+  }, [vars, locale]);
 
   return <>{children}</>;
 }

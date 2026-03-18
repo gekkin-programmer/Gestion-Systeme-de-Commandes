@@ -15,18 +15,16 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const messages = await getMessages();
 
   return (
-    <html lang={params.locale}>
-      <body>
-        {/* Lordicon web component library */}
-        <Script src="https://cdn.lordicon.com/lordicon.js" strategy="beforeInteractive" />
-        <NextIntlClientProvider locale={params.locale} messages={messages}>
-          <ThemeProvider>
-            <OfflineBanner />
-            {children}
-            <AgentationWidget />
-          </ThemeProvider>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <>
+      {/* Lordicon web component library */}
+      <Script src="https://cdn.lordicon.com/lordicon.js" strategy="beforeInteractive" />
+      <NextIntlClientProvider locale={params.locale} messages={messages}>
+        <ThemeProvider locale={params.locale}>
+          <OfflineBanner />
+          {children}
+          <AgentationWidget />
+        </ThemeProvider>
+      </NextIntlClientProvider>
+    </>
   );
 }
