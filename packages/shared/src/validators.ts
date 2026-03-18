@@ -84,7 +84,7 @@ export const StartSessionSchema = z.object({
 // ─── Order ───────────────────────────────────────────────────────────────────
 
 export const CreateOrderItemSchema = z.object({
-  menuItemId: z.string().uuid(),
+  menuItemId: z.string().min(1),
   quantity: z.number().int().positive(),
 });
 

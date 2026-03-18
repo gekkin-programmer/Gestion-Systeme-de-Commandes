@@ -39,7 +39,6 @@ const t = {
     sessionExpired:  'Session expirée. Retournez au menu et scannez à nouveau le QR code.',
     phoneRequired:   'Veuillez saisir votre numéro de téléphone pour le paiement Mobile Money.',
     genericError:    'Une erreur est survenue. Veuillez réessayer.',
-    staleCart:       'Panier expiré. Retournez au menu pour ajouter vos articles.',
     orderConfirmed:  'Commande confirmée !',
     redirecting:     'Redirection en cours…',
     queuedTitle:     'Commande enregistrée.',
@@ -71,7 +70,6 @@ const t = {
     sessionExpired:  'Session expired. Go back to the menu and scan the QR code again.',
     phoneRequired:   'Please enter your phone number for Mobile Money payment.',
     genericError:    'An error occurred. Please try again.',
-    staleCart:       'Cart expired. Go back to the menu to add your items.',
     orderConfirmed:  'Order placed!',
     redirecting:     'Redirecting…',
     queuedTitle:     'Order saved.',
@@ -155,15 +153,6 @@ export default function CartPage() {
     }
     if (isMobileMoney && !customerPhone.trim()) {
       setError(tx.phoneRequired);
-      return;
-    }
-
-    // Detect stale items left over from a previous session (non-UUID IDs)
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const hasStaleItems = items.some((i) => !UUID_RE.test(i.menuItemId));
-    if (hasStaleItems) {
-      clearCart();
-      setError(tx.staleCart);
       return;
     }
 
