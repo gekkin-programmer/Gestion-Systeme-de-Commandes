@@ -207,7 +207,7 @@ export default function OrderPage({ params }: OrderPageProps) {
               {confirming
                 ? 'Confirmation…'
                 : isReady
-                  ? `Reçu — ${formatPrice(order.totalAmount)}`
+                  ? 'Commande Reçu'
                   : 'En attente de livraison…'}
             </button>
           )}

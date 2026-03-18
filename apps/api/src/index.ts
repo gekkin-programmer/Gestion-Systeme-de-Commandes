@@ -51,8 +51,8 @@ const io = new Server(server, {
     origin: env.CORS_ORIGINS.split(',').map((o) => o.trim()),
     credentials: true,
   },
-  pingTimeout: 60_000,
-  pingInterval: 25_000,
+  pingTimeout: 20_000,
+  pingInterval: 10_000,
   // Allow connections to be re-routed without losing subscribed rooms
   // (required when using Redis adapter behind a load balancer without sticky sessions)
   connectionStateRecovery: { maxDisconnectionDuration: 2 * 60 * 1000 },

@@ -53,9 +53,8 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   });
 
   const subtotal = orderItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-  const taxRate = session.table.restaurant.settings?.taxRate ?? 0;
-  const taxAmount = Math.round(subtotal * taxRate);
-  const totalAmount = subtotal + taxAmount;
+  const taxAmount = 0;
+  const totalAmount = subtotal;
 
   const order = await prisma.order.create({
     data: {

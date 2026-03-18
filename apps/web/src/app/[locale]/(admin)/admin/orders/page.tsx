@@ -7,14 +7,24 @@ import { OrderKanbanBoard } from '@/components/staff/OrderKanbanBoard';
 import { BackButton } from '@/components/shared/BackButton';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrders, useSyncStatusQueue } from '@/hooks/useOrders';
+import { useRestaurantSocket } from '@/hooks/useSocket';
 import dk from '@/styles/dark.module.css';
+import type { OrderDTO } from '@/types';
 
 export default function AdminOrdersPage() {
-  const locale       = useLocale();
-  const { user }     = useAuth();
-  const restaurantId = user?.restaurantId ?? '';
-  const { orders, loading, fetchOrders, updateOrderStatus, pendingIds } = useOrders(restaurantId);
+  const locale                   = useLocale();
+  const { user, accessToken }    = useAuth();
+  const restaurantId             = user?.restaurantId ?? '';
+  const { orders, loading, fetchOrders, updateOrderStatus, addOrder, setOrders, pendingIds } = useOrders(restaurantId);
   useSyncStatusQueue(updateOrderStatus);
+
+  useRestaurantSocket(accessToken, {
+    onOrderNew: (order: unknown) => { addOrder(order as OrderDTO); },
+    onOrderStatusChanged: (updated: unknown) => {
+      const o = updated as OrderDTO;
+      setOrders((prev) => prev.map((x) => x.id === o.id ? o : x));
+    },
+  });
 
   useEffect(() => {
     if (restaurantId) fetchOrders();

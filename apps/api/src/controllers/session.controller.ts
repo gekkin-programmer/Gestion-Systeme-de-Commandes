@@ -5,9 +5,6 @@ import { StartSessionSchema } from '@repo/shared';
 import { env } from '../config/env';
 import { emitTableStatusChanged } from '../services/notification.service';
 
-// Active order statuses — sessions owning these must not be forcibly closed
-const ACTIVE_ORDER_STATUSES = ['PENDING', 'PREPARING', 'READY'] as const;
-
 export async function startSession(req: Request, res: Response): Promise<void> {
   const parsed = StartSessionSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -39,30 +36,6 @@ export async function startSession(req: Request, res: Response): Promise<void> {
   if (!table || !table.restaurant.isActive) {
     res.status(404).json({ success: false, error: 'Table not found or restaurant inactive' });
     return;
-  }
-
-  // Only deactivate sessions that have NO in-progress orders.
-  // Sessions with active orders (PENDING / PREPARING / READY) are left alive
-  // so the kitchen can still serve those orders and the customer can track them.
-  const activeSessions = await prisma.tableSession.findMany({
-    where: { tableId: table.id, isActive: true },
-    include: {
-      orders: {
-        where: { status: { in: [...ACTIVE_ORDER_STATUSES] } },
-        select: { id: true },
-      },
-    },
-  });
-
-  const idleSessionIds = activeSessions
-    .filter((s) => s.orders.length === 0)
-    .map((s) => s.id);
-
-  if (idleSessionIds.length > 0) {
-    await prisma.tableSession.updateMany({
-      where: { id: { in: idleSessionIds } },
-      data: { isActive: false },
-    });
   }
 
   const expiresAt = new Date();

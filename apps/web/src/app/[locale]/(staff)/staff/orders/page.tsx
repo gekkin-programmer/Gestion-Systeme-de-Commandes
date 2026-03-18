@@ -15,7 +15,7 @@ export default function StaffOrdersPage() {
   const { user, accessToken, logout } = useAuth();
   const restaurantId = user?.restaurantId ?? '';
 
-  const { orders, loading, fetchOrders, updateOrderStatus, addOrder, pendingIds } = useOrders(restaurantId);
+  const { orders, loading, fetchOrders, updateOrderStatus, addOrder, setOrders, pendingIds } = useOrders(restaurantId);
   useSyncStatusQueue(updateOrderStatus);
   const { playNewOrderSound, showBrowserNotification } = useNotification();
 
@@ -25,6 +25,10 @@ export default function StaffOrdersPage() {
       addOrder(o);
       playNewOrderSound();
       showBrowserNotification(t('staff.newOrder'), `Commande ${o.orderNumber}`);
+    },
+    onOrderStatusChanged: (updated: unknown) => {
+      const o = updated as OrderDTO;
+      setOrders((prev) => prev.map((x) => x.id === o.id ? o : x));
     },
   });
 

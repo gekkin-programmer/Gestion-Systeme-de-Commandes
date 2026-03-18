@@ -140,6 +140,7 @@ export interface OrderDTO {
   customerPhone: string | null;
   items: OrderItemDTO[];
   payment: PaymentDTO | null;
+  tableSession?: { table: { number: number; label: string } } | null;
   createdAt: string;
   updatedAt: string;
 }

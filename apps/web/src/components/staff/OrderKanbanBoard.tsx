@@ -56,7 +56,7 @@ export function OrderKanbanBoard({ orders, onStatusChange, pendingIds }: OrderKa
                       padding: '12px 14px',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                       <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--cream)', textTransform: 'uppercase' }}>
                         {order.orderNumber}
                         {pendingIds?.has(order.id) && (
@@ -70,6 +70,13 @@ export function OrderKanbanBoard({ orders, onStatusChange, pendingIds }: OrderKa
                         )}
                       </span>
                     </div>
+                    {order.tableSession?.table && (
+                      <div style={{ marginBottom: 6 }}>
+                        <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 11, color: 'var(--gold)' }}>
+                          Table {order.tableSession.table.label || order.tableSession.table.number}
+                        </span>
+                      </div>
+                    )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                       <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 11, color: 'var(--cream-dim)' }}>
