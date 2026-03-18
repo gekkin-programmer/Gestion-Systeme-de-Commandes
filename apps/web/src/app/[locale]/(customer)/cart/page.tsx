@@ -101,8 +101,8 @@ export default function CartPage() {
       clearCart();
       router.push(`/${locale}/order/${orderId}`);
     } catch (err: any) {
-      // Network error (VPS unreachable) → queue for retry
-      if (!navigator.onLine || (err as any)?.code === 'ERR_NETWORK') {
+      // Only queue when the device is genuinely offline
+      if (!navigator.onLine) {
         queueOrder();
         return;
       }

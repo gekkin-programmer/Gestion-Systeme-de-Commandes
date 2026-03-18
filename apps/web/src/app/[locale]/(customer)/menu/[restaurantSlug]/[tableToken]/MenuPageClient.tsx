@@ -265,7 +265,7 @@ export default function MenuPage({ params }: MenuPageProps) {
     api
       .post('/sessions/start', { tableToken: params.tableToken })
       .then(({ data }) => setSession(data.data.sessionToken, params.restaurantSlug))
-      .catch(() => {});
+      .catch(() => setLoadError('QR code invalide ou expiré. Veuillez scanner à nouveau.'));
   }, [params.tableToken, params.restaurantSlug, setSession]);
 
   // Live clock
