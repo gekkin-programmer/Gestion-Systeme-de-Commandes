@@ -22,7 +22,10 @@ export function useRestaurantSocket(accessToken: string | null, options: UseSock
     const socket = connectSocket();
     socketRef.current = socket;
 
-    socket.emit(SOCKET_EVENTS.JOIN_RESTAURANT, { token: accessToken });
+    // Re-join restaurant room on every connect (initial + after any reconnect)
+    const rejoin = () => socket.emit(SOCKET_EVENTS.JOIN_RESTAURANT, { token: accessToken });
+    socket.on('connect', rejoin);
+    if (socket.connected) rejoin();
 
     if (options.onOrderNew)
       socket.on(SOCKET_EVENTS.ORDER_NEW, options.onOrderNew);
@@ -32,6 +35,7 @@ export function useRestaurantSocket(accessToken: string | null, options: UseSock
       socket.on(SOCKET_EVENTS.TABLE_STATUS_CHANGED, options.onTableStatusChanged);
 
     return () => {
+      socket.off('connect', rejoin);
       socket.off(SOCKET_EVENTS.ORDER_NEW);
       socket.off(SOCKET_EVENTS.ORDER_STATUS_CHANGED);
       socket.off(SOCKET_EVENTS.TABLE_STATUS_CHANGED);
@@ -50,7 +54,10 @@ export function useSessionSocket(sessionToken: string | null, options: UseSocket
     const socket = connectSocket();
     socketRef.current = socket;
 
-    socket.emit(SOCKET_EVENTS.JOIN_SESSION, { sessionToken });
+    // Re-join session room on every connect (initial + after any reconnect)
+    const rejoin = () => socket.emit(SOCKET_EVENTS.JOIN_SESSION, { sessionToken });
+    socket.on('connect', rejoin);
+    if (socket.connected) rejoin();
 
     if (options.onOrderStatusChanged)
       socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, options.onOrderStatusChanged);
@@ -58,6 +65,7 @@ export function useSessionSocket(sessionToken: string | null, options: UseSocket
       socket.on(SOCKET_EVENTS.PAYMENT_STATUS_CHANGED, options.onPaymentStatusChanged);
 
     return () => {
+      socket.off('connect', rejoin);
       socket.off(SOCKET_EVENTS.ORDER_STATUS_CHANGED);
       socket.off(SOCKET_EVENTS.PAYMENT_STATUS_CHANGED);
     };

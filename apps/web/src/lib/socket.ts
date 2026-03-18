@@ -11,7 +11,8 @@ export function getSocket(): Socket {
       withCredentials: true,
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
     });
   }
   return socket;

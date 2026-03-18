@@ -20,7 +20,7 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   PENDING:   'CONFIRMED',
   CONFIRMED: 'PREPARING',
   PREPARING: 'READY',
-  READY:     'SERVED',
+  // READY → SERVED is triggered by the customer's "Reçu" button, not staff
 };
 
 interface OrderKanbanBoardProps {
