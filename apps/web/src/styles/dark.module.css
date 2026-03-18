@@ -298,8 +298,8 @@
 }
 
 .errorBox {
-  background: rgba(239,68,68,0.07);
-  border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(200,169,110,0.07);
+  border: 1px solid rgba(200,169,110,0.25);
   padding: 16px 20px;
   display: flex;
   align-items: center;
@@ -309,7 +309,7 @@
 .errorText {
   font-family: 'Jost', sans-serif;
   font-size: 13px;
-  color: #f87171;
+  color: #C8A96E;
 }
 
 /* ─── Cart item row ───────────────────────────── */
