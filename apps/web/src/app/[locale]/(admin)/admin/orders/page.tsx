@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { OrderKanbanBoard } from '@/components/staff/OrderKanbanBoard';
 import { BackButton } from '@/components/shared/BackButton';
+import { Toast } from '@/components/shared/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrders, useSyncStatusQueue } from '@/hooks/useOrders';
 import { useRestaurantSocket } from '@/hooks/useSocket';
@@ -17,12 +18,18 @@ export default function AdminOrdersPage() {
   const restaurantId             = user?.restaurantId ?? '';
   const { orders, loading, fetchOrders, updateOrderStatus, addOrder, setOrders, pendingIds } = useOrders(restaurantId);
   useSyncStatusQueue(updateOrderStatus);
+  const [servedToast, setServedToast] = useState<string | null>(null);
 
   useRestaurantSocket(accessToken, {
     onOrderNew: (order: unknown) => { addOrder(order as OrderDTO); },
     onOrderStatusChanged: (updated: unknown) => {
       const o = updated as OrderDTO;
       setOrders((prev) => prev.map((x) => x.id === o.id ? o : x));
+      if (o.status === 'SERVED') {
+        const table = o.tableSession?.table;
+        const label = table ? ` — ${table.label || `Table ${table.number}`}` : '';
+        setServedToast(`${o.orderNumber}${label} — récupérée ✓`);
+      }
     },
   });
 
@@ -34,6 +41,15 @@ export default function AdminOrdersPage() {
 
   return (
     <div className={dk.page} style={{ minHeight: '100vh' }}>
+
+      {servedToast && (
+        <Toast
+          message={servedToast}
+          color="#4ade80"
+          duration={5000}
+          onClose={() => setServedToast(null)}
+        />
+      )}
 
       {/* Header */}
       <header className={dk.header}>
