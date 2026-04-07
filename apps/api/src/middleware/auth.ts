@@ -6,7 +6,8 @@ interface JwtPayload {
   sub: string;
   email: string;
   role: string;
-  restaurantId: string | null;
+  hotelId: string | null;
+  departmentType: string | null;
 }
 
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
@@ -23,7 +24,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
       id: payload.sub,
       email: payload.email,
       role: payload.role as any,
-      restaurantId: payload.restaurantId,
+      hotelId: payload.hotelId,
+      departmentType: payload.departmentType as any,
     };
     next();
   } catch {

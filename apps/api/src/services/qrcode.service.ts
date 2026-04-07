@@ -18,11 +18,6 @@ export async function generateQRCodeBuffer(url: string): Promise<Buffer> {
   });
 }
 
-export function buildMenuUrl(
-  baseUrl: string,
-  locale: string,
-  restaurantSlug: string,
-  tableToken: string,
-): string {
-  return `${baseUrl}/${locale}/menu/${restaurantSlug}/${tableToken}`;
+export function buildRoomUrl(baseUrl: string, roomCode: string): string {
+  return `${baseUrl}/room/${roomCode}`;
 }

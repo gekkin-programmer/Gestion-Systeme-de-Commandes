@@ -12,11 +12,12 @@ import { errorHandler } from './middleware/errorHandler';
 
 // Routes
 import authRoutes from './routes/auth.routes';
-import restaurantRoutes from './routes/restaurant.routes';
-import menuRoutes from './routes/menu.routes';
-import tableRoutes from './routes/table.routes';
-import sessionRoutes from './routes/session.routes';
-import orderRoutes from './routes/order.routes';
+import hotelRoutes from './routes/hotel.routes';
+import roomRoutes from './routes/room.routes';
+import stayRoutes from './routes/stay.routes';
+import departmentRoutes from './routes/department.routes';
+import serviceRoutes from './routes/service.routes';
+import requestRoutes from './routes/request.routes';
 import paymentRoutes from './routes/payment.routes';
 import receiptRoutes from './routes/receipt.routes';
 import superadminRoutes from './routes/superadmin.routes';
@@ -51,16 +52,15 @@ app.use(
 );
 
 // ─── Compression ─────────────────────────────────────────────────────────────
-// Gzip all responses > 1 KB. Cuts bandwidth 60-80% for JSON payloads.
+
 app.use(compression());
 
 // ─── Parsing & Logging ───────────────────────────────────────────────────────
 
-app.use(express.json({ limit: '1mb' }));   // tightened from 10mb — no endpoint needs more
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
-// Structured request logging via pino
 app.use((req, _res, next) => {
   logger.debug({ method: req.method, url: req.originalUrl }, 'Incoming request');
   next();
@@ -72,7 +72,6 @@ app.use(globalRateLimiter);
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 
-// Deep health check for load balancers — they'll stop routing to unhealthy instances
 app.get('/health', async (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
 });
@@ -88,16 +87,16 @@ app.use('/api/v1/uploads', express.static(UPLOAD_DIR));
 const API = '/api/v1';
 
 app.use(`${API}/auth`,        authRoutes);
-app.use(`${API}/sessions`,    sessionRoutes);
-app.use(`${API}/orders`,      orderRoutes);
+app.use(`${API}/stays`,       stayRoutes);
+app.use(`${API}/requests`,    requestRoutes);
 app.use(`${API}/payments`,    paymentRoutes);
 app.use(`${API}/receipts`,    receiptRoutes);
-// Public + cached
-app.use(`${API}/menu`,        menuRoutes);
+app.use(`${API}/services`,    serviceRoutes);
 
-// Admin-only routes — extra rate limit layer on top of globalRateLimiter
-app.use(`${API}/restaurants`, adminRateLimiter, restaurantRoutes);
-app.use(`${API}/tables`,      adminRateLimiter, tableRoutes);
+// Admin-rate-limited routes
+app.use(`${API}/hotels`,      adminRateLimiter, hotelRoutes);
+app.use(`${API}/rooms`,       adminRateLimiter, roomRoutes);
+app.use(`${API}/departments`, adminRateLimiter, departmentRoutes);
 app.use(`${API}/superadmin`,  adminRateLimiter, superadminRoutes);
 app.use(`${API}/upload`,      adminRateLimiter, uploadRoutes);
 

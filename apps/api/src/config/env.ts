@@ -19,6 +19,10 @@ const envSchema = z.object({
   SUPER_ADMIN_EMAIL: z.string().email().optional(),
   SUPER_ADMIN_PASSWORD: z.string().optional(),
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+  // Twilio — SMS OTP
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN:  z.string().optional(),
+  TWILIO_PHONE_FROM:  z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

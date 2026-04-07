@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import * as ctrl from '../controllers/receipt.controller';
+import * as receipt from '../controllers/receipt.controller';
 
 const router = Router();
 
-router.get('/:orderId', ctrl.downloadReceipt);
+router.get('/:requestId', receipt.downloadReceipt);
 
 export default router;

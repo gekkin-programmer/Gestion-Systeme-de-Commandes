@@ -7,7 +7,7 @@ import { PaymentMethod, PaymentStatus } from '@prisma/client';
  * In production, replace with actual MTN MoMo / Orange Money API calls.
  */
 export async function initiateMobileMoneyPayment(params: {
-  orderId: string;
+  requestId: string;
   method: PaymentMethod;
   amount: number;
   phone: string;
@@ -15,7 +15,6 @@ export async function initiateMobileMoneyPayment(params: {
   // Simulate API call delay
   await new Promise((r) => setTimeout(r, 500));
 
-  // Mock: always returns PENDING_VERIFICATION
   const transactionRef = `MOCK-${params.method.slice(0, 3)}-${uuidv4().slice(0, 8).toUpperCase()}`;
 
   return {
@@ -28,13 +27,13 @@ export async function initiateMobileMoneyPayment(params: {
  * Mock callback that simulates MoMo webhook.
  */
 export async function simulatePaymentCallback(
-  orderId: string,
+  requestId: string,
   simulate: 'success' | 'failure' = 'success',
 ): Promise<void> {
   const status = simulate === 'success' ? PaymentStatus.PAID : PaymentStatus.FAILED;
 
   await prisma.payment.update({
-    where: { orderId },
+    where: { requestId },
     data: {
       status,
       confirmedAt: simulate === 'success' ? new Date() : null,
@@ -42,11 +41,11 @@ export async function simulatePaymentCallback(
   });
 }
 
-export function generateOrderNumber(): string {
+export function generateRequestNumber(): string {
   const now = new Date();
   const date = now.toISOString().slice(2, 10).replace(/-/g, '');
   const seq = Math.floor(Math.random() * 999)
     .toString()
     .padStart(3, '0');
-  return `CMD-${date}-${seq}`;
+  return `REQ-${date}-${seq}`;
 }

@@ -93,16 +93,17 @@ async function main(): Promise<void> {
     }
   }
 
-  // Delete expired table sessions (older than TTL)
+  // Close room stays that have been active for more than 24h without a checkout
   async function cleanupExpiredSessions(): Promise<void> {
     try {
-      const { count } = await prisma.tableSession.updateMany({
-        where: { isActive: true, expiresAt: { lt: new Date() } },
-        data:  { isActive: false },
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const { count } = await prisma.roomStay.updateMany({
+        where: { isActive: true, checkInAt: { lt: cutoff } },
+        data:  { isActive: false, checkOutAt: new Date() },
       });
-      if (count > 0) logger.info({ count }, 'Deactivated expired table sessions');
+      if (count > 0) logger.info({ count }, 'Auto-closed stale room stays');
     } catch (err) {
-      logger.error({ err }, 'Session cleanup failed');
+      logger.error({ err }, 'Room stay cleanup failed');
     }
   }
 

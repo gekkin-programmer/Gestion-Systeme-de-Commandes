@@ -1,17 +1,17 @@
 import PDFDocument from 'pdfkit';
-import type { Order, OrderItem, Payment, Restaurant } from '@prisma/client';
+import type { ServiceRequest, ServiceRequestItem, Payment, Hotel } from '@prisma/client';
 
-type FullOrder = Order & {
-  items: OrderItem[];
+type FullRequest = ServiceRequest & {
+  items: ServiceRequestItem[];
   payment: Payment | null;
-  tableSession: {
-    table: { number: number; label: string };
+  roomStay: {
+    room: { roomNumber: number; floor: number };
   };
 };
 
 export function generateReceiptPDF(
-  order: FullOrder,
-  restaurant: Restaurant,
+  request: FullRequest,
+  hotel: Hotel,
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -26,11 +26,11 @@ export function generateReceiptPDF(
     doc
       .fontSize(20)
       .font('Helvetica-Bold')
-      .text(restaurant.name, { align: 'center' })
+      .text(hotel.name, { align: 'center' })
       .fontSize(10)
       .font('Helvetica')
-      .text(restaurant.address ?? '', { align: 'center' })
-      .text(restaurant.city ?? '', { align: 'center' })
+      .text(hotel.address ?? '', { align: 'center' })
+      .text(hotel.city ?? '', { align: 'center' })
       .moveDown();
 
     doc
@@ -39,17 +39,19 @@ export function generateReceiptPDF(
       .stroke()
       .moveDown(0.5);
 
-    // ─── Order Info ───────────────────────────────────────────────────────
+    // ─── Request Info ─────────────────────────────────────────────────────
+
+    const roomLabel = `Chambre ${request.roomStay.room.roomNumber} / Étage ${request.roomStay.room.floor}`;
 
     doc
       .fontSize(12)
       .font('Helvetica-Bold')
-      .text(`REÇU DE COMMANDE`)
+      .text('REÇU DE SERVICE')
       .font('Helvetica')
       .fontSize(10)
-      .text(`N° : ${order.orderNumber}`)
-      .text(`Table : ${order.tableSession.table.label}`)
-      .text(`Date : ${new Date(order.createdAt).toLocaleString('fr-FR')}`)
+      .text(`N° : ${request.requestNumber}`)
+      .text(roomLabel)
+      .text(`Date : ${new Date(request.createdAt).toLocaleString('fr-FR')}`)
       .moveDown();
 
     doc
@@ -68,7 +70,7 @@ export function generateReceiptPDF(
 
     doc.font('Helvetica').moveDown(0.3);
 
-    for (const item of order.items) {
+    for (const item of request.items) {
       const subtotal = item.quantity * item.unitPrice;
       doc.text(item.itemNameFr, 40, doc.y, { continued: true, width: 200 });
       doc.text(`${item.quantity}`, 240, doc.y, { continued: true, width: 50, align: 'center' });
@@ -87,37 +89,37 @@ export function generateReceiptPDF(
 
     doc.fontSize(10);
     doc.text('Sous-total :', 40, doc.y, { continued: true, width: 320, align: 'right' });
-    doc.text(`${order.subtotal.toLocaleString('fr-FR')} XAF`, 40, doc.y, { align: 'right' });
+    doc.text(`${request.subtotal.toLocaleString('fr-FR')} XAF`, 40, doc.y, { align: 'right' });
 
-    if (order.taxAmount > 0) {
+    if (request.taxAmount > 0) {
       doc.text('TVA (19.25%) :', 40, doc.y, { continued: true, width: 320, align: 'right' });
-      doc.text(`${order.taxAmount.toLocaleString('fr-FR')} XAF`, 40, doc.y, { align: 'right' });
+      doc.text(`${request.taxAmount.toLocaleString('fr-FR')} XAF`, 40, doc.y, { align: 'right' });
     }
 
     doc
       .font('Helvetica-Bold')
       .fontSize(12)
       .text('TOTAL :', 40, doc.y, { continued: true, width: 320, align: 'right' })
-      .text(`${order.totalAmount.toLocaleString('fr-FR')} XAF`, 40, doc.y, { align: 'right' });
+      .text(`${request.totalAmount.toLocaleString('fr-FR')} XAF`, 40, doc.y, { align: 'right' });
 
     // ─── Payment Info ─────────────────────────────────────────────────────
 
-    if (order.payment) {
+    if (request.payment) {
       doc.moveDown().font('Helvetica').fontSize(10);
       const methodLabels: Record<string, string> = {
-        CASH: 'Espèces',
         MTN_MOBILE_MONEY: 'MTN Mobile Money',
         ORANGE_MONEY: 'Orange Money',
+        HOTEL_BILL: 'Facturé sur la chambre',
       };
-      doc.text(`Paiement : ${methodLabels[order.payment.method] ?? order.payment.method}`);
-      if (order.payment.transactionRef) {
-        doc.text(`Réf : ${order.payment.transactionRef}`);
+      doc.text(`Paiement : ${methodLabels[request.payment.method] ?? request.payment.method}`);
+      if (request.payment.transactionRef) {
+        doc.text(`Réf : ${request.payment.transactionRef}`);
       }
     }
 
     // ─── Footer ───────────────────────────────────────────────────────────
 
-    doc.moveDown(2).font('Helvetica').fontSize(9).text('Merci de votre visite !', { align: 'center' });
+    doc.moveDown(2).font('Helvetica').fontSize(9).text('Merci de votre séjour !', { align: 'center' });
 
     doc.end();
   });

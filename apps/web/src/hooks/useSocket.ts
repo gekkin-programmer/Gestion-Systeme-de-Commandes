@@ -5,15 +5,23 @@ import { connectSocket } from '@/lib/socket';
 import { SOCKET_EVENTS } from '@repo/shared';
 import type { Socket } from 'socket.io-client';
 
-interface UseSocketOptions {
-  onOrderNew?: (order: unknown) => void;
-  onOrderStatusChanged?: (order: unknown) => void;
+interface UseHotelSocketOptions {
+  onRequestNew?: (request: unknown) => void;
+  onRequestStatusChanged?: (request: unknown) => void;
   onPaymentStatusChanged?: (payment: unknown) => void;
-  onMenuItemAvailabilityChanged?: (item: unknown) => void;
-  onTableStatusChanged?: (table: unknown) => void;
+  onServiceItemAvailabilityChanged?: (item: unknown) => void;
+  onRoomStatusChanged?: (room: unknown) => void;
 }
 
-export function useRestaurantSocket(accessToken: string | null, options: UseSocketOptions = {}) {
+/**
+ * For staff/admin: joins the hotel room and optionally a department room.
+ * Reconnects automatically on socket reconnect.
+ */
+export function useHotelSocket(
+  accessToken: string | null,
+  department?: string | null,
+  options: UseHotelSocketOptions = {},
+) {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -22,54 +30,79 @@ export function useRestaurantSocket(accessToken: string | null, options: UseSock
     const socket = connectSocket();
     socketRef.current = socket;
 
-    // Re-join restaurant room on every connect (initial + after any reconnect)
-    const rejoin = () => socket.emit(SOCKET_EVENTS.JOIN_RESTAURANT, { token: accessToken });
-    socket.on('connect', rejoin);
-    if (socket.connected) rejoin();
+    const rejoinHotel = () => socket.emit(SOCKET_EVENTS.JOIN_HOTEL, { token: accessToken });
+    socket.on('connect', rejoinHotel);
+    if (socket.connected) rejoinHotel();
 
-    if (options.onOrderNew)
-      socket.on(SOCKET_EVENTS.ORDER_NEW, options.onOrderNew);
-    if (options.onOrderStatusChanged)
-      socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, options.onOrderStatusChanged);
-    if (options.onTableStatusChanged)
-      socket.on(SOCKET_EVENTS.TABLE_STATUS_CHANGED, options.onTableStatusChanged);
+    // Also join dept room if provided
+    let rejoinDept: (() => void) | null = null;
+    if (department) {
+      rejoinDept = () => socket.emit(SOCKET_EVENTS.JOIN_DEPARTMENT, { token: accessToken, department });
+      socket.on('connect', rejoinDept);
+      if (socket.connected) rejoinDept();
+    }
+
+    if (options.onRequestNew)
+      socket.on(SOCKET_EVENTS.REQUEST_NEW, options.onRequestNew);
+    if (options.onRequestStatusChanged)
+      socket.on(SOCKET_EVENTS.REQUEST_STATUS_CHANGED, options.onRequestStatusChanged);
+    if (options.onRoomStatusChanged)
+      socket.on(SOCKET_EVENTS.ROOM_STATUS_CHANGED, options.onRoomStatusChanged);
+    if (options.onServiceItemAvailabilityChanged)
+      socket.on(SOCKET_EVENTS.SERVICE_ITEM_AVAILABILITY_CHANGED, options.onServiceItemAvailabilityChanged);
 
     return () => {
-      socket.off('connect', rejoin);
-      socket.off(SOCKET_EVENTS.ORDER_NEW);
-      socket.off(SOCKET_EVENTS.ORDER_STATUS_CHANGED);
-      socket.off(SOCKET_EVENTS.TABLE_STATUS_CHANGED);
+      socket.off('connect', rejoinHotel);
+      if (rejoinDept) socket.off('connect', rejoinDept);
+      socket.off(SOCKET_EVENTS.REQUEST_NEW);
+      socket.off(SOCKET_EVENTS.REQUEST_STATUS_CHANGED);
+      socket.off(SOCKET_EVENTS.ROOM_STATUS_CHANGED);
+      socket.off(SOCKET_EVENTS.SERVICE_ITEM_AVAILABILITY_CHANGED);
     };
-  }, [accessToken]);
+  }, [accessToken, department]);
 
   return socketRef.current;
 }
 
-export function useSessionSocket(sessionToken: string | null, options: UseSocketOptions = {}) {
+interface UseStaySocketOptions {
+  onRequestStatusChanged?: (request: unknown) => void;
+  onPaymentStatusChanged?: (payment: unknown) => void;
+  onStayClosed?: (stay: unknown) => void;
+}
+
+/**
+ * For guests: joins the stay room using stayToken (no auth needed).
+ */
+export function useStaySocket(stayToken: string | null, options: UseStaySocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!sessionToken) return;
+    if (!stayToken) return;
 
     const socket = connectSocket();
     socketRef.current = socket;
 
-    // Re-join session room on every connect (initial + after any reconnect)
-    const rejoin = () => socket.emit(SOCKET_EVENTS.JOIN_SESSION, { sessionToken });
+    const rejoin = () => socket.emit(SOCKET_EVENTS.JOIN_STAY, { stayToken });
     socket.on('connect', rejoin);
     if (socket.connected) rejoin();
 
-    if (options.onOrderStatusChanged)
-      socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, options.onOrderStatusChanged);
+    if (options.onRequestStatusChanged)
+      socket.on(SOCKET_EVENTS.REQUEST_STATUS_CHANGED, options.onRequestStatusChanged);
     if (options.onPaymentStatusChanged)
       socket.on(SOCKET_EVENTS.PAYMENT_STATUS_CHANGED, options.onPaymentStatusChanged);
+    if (options.onStayClosed)
+      socket.on(SOCKET_EVENTS.STAY_CLOSED, options.onStayClosed);
 
     return () => {
       socket.off('connect', rejoin);
-      socket.off(SOCKET_EVENTS.ORDER_STATUS_CHANGED);
+      socket.off(SOCKET_EVENTS.REQUEST_STATUS_CHANGED);
       socket.off(SOCKET_EVENTS.PAYMENT_STATUS_CHANGED);
+      socket.off(SOCKET_EVENTS.STAY_CLOSED);
     };
-  }, [sessionToken]);
+  }, [stayToken]);
 
   return socketRef.current;
 }
+
+// Backwards-compat alias
+export { useHotelSocket as useRestaurantSocket };

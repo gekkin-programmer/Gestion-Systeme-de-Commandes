@@ -13,15 +13,13 @@ enum Role {
   SUPER_ADMIN
   ADMIN
   STAFF
-  CUSTOMER
 }
 
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PREPARING
-  READY
-  SERVED
+enum RequestStatus {
+  RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  DELIVERED
   CANCELLED
 }
 
@@ -34,21 +32,35 @@ enum PaymentStatus {
 }
 
 enum PaymentMethod {
-  CASH
   MTN_MOBILE_MONEY
   ORANGE_MONEY
+  HOTEL_BILL
 }
 
-enum TableStatus {
+enum RoomStatus {
   AVAILABLE
   OCCUPIED
-  RESERVED
   MAINTENANCE
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  SUITE
+  DELUXE
+  PENTHOUSE
+}
+
+enum ServiceType {
+  ROOM_SERVICE
+  HOUSEKEEPING
+  CONCIERGE
+  SPA
 }
 
 // ─── Models ──────────────────────────────────────────────────────────────────
 
-model Restaurant {
+model Hotel {
   id          String   @id @default(uuid())
   name        String
   slug        String   @unique
@@ -60,47 +72,48 @@ model Restaurant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  settings    RestaurantSettings?
-  users       User[]
-  categories  Category[]
-  menuItems   MenuItem[]
-  tables      Table[]
-  orders      Order[]
+  settings           HotelSettings?
+  users              User[]
+  rooms              Room[]
+  serviceRequests    ServiceRequest[]
+  serviceDepartments ServiceDepartment[]
+  serviceItems       ServiceItem[]
 
-  @@map("restaurants")
+  @@map("hotels")
 }
 
-model RestaurantSettings {
+model HotelSettings {
   id                  String   @id @default(uuid())
-  restaurantId        String   @unique
+  hotelId             String   @unique
   mtnMoneyNumber      String?
   orangeMoneyNumber   String?
   enableMtnMoney      Boolean  @default(true)
   enableOrangeMoney   Boolean  @default(true)
-  enableCash          Boolean  @default(true)
+  enableHotelBill     Boolean  @default(true)
   taxRate             Float    @default(0)
   themePreset         String   @default("DARK_GOLD") // DARK_GOLD | WHITE_PURPLE | WHITE_RED
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  restaurant          Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  hotel               Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
-  @@map("restaurant_settings")
+  @@map("hotel_settings")
 }
 
 model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
+  id                String       @id @default(uuid())
+  email             String       @unique
   passwordHash      String
-  role              Role      @default(STAFF)
-  restaurantId      String?
-  isActive          Boolean   @default(true)
-  resetToken        String?   @unique
+  role              Role         @default(STAFF)
+  hotelId           String?
+  departmentType    ServiceType?
+  isActive          Boolean      @default(true)
+  resetToken        String?      @unique
   resetTokenExpiry  DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
-  restaurant     Restaurant?    @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  hotel          Hotel?         @relation(fields: [hotelId], references: [id], onDelete: SetNull)
   refreshTokens  RefreshToken[]
 
   @@map("users")
@@ -117,138 +130,142 @@ model RefreshToken {
   user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([expiresAt])  // for cleanup queries
+  @@index([expiresAt])
   @@map("refresh_tokens")
 }
 
-model Category {
+model GuestUser {
   id           String   @id @default(uuid())
-  restaurantId String
-  nameFr       String
-  nameEn       String
-  sortOrder    Int      @default(0)
-  isActive     Boolean  @default(true)
+  phone        String   @unique
+  passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  menuItems    MenuItem[]
-
-  @@index([restaurantId, isActive])
-  @@map("categories")
+  @@map("guest_users")
 }
 
-model MenuItem {
-  id             String   @id @default(uuid())
-  categoryId     String
-  restaurantId   String
-  nameFr         String
-  nameEn         String
-  descriptionFr  String?
-  descriptionEn  String?
-  price          Float
-  imageUrl       String?
-  isAvailable    Boolean  @default(true)
-  isPopular      Boolean  @default(false)
-  chefName       String?
-  cookingTimeMin Int?
-  calories       Int?
-  servings       Int?
-  proteinG       Float?
-  carbsG         Float?
-  fatG           Float?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+model Room {
+  id          String     @id @default(uuid())
+  hotelId     String
+  roomNumber  Int
+  roomCode    String     @unique
+  floor       Int        @default(1)
+  type        RoomType   @default(DOUBLE)
+  status      RoomStatus @default(AVAILABLE)
+  qrCodeUrl   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
-  category       Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  orderItems     OrderItem[]
+  hotel       Hotel      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  stays       RoomStay[]
 
-  @@index([restaurantId, isAvailable])
-  @@index([categoryId])
-  @@map("menu_items")
+  @@unique([hotelId, roomNumber])
+  @@map("rooms")
 }
 
-model Table {
-  id           String      @id @default(uuid())
-  restaurantId String
-  number       Int
-  label        String
-  capacity     Int         @default(4)
-  status       TableStatus @default(AVAILABLE)
-  qrToken      String      @unique @default(uuid())
-  qrCodeUrl    String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+model RoomStay {
+  id           String    @id @default(uuid())
+  stayToken    String    @unique @default(uuid())
+  roomId       String
+  guestPhone   String?
+  isActive     Boolean   @default(true)
+  checkInAt    DateTime  @default(now())
+  checkOutAt   DateTime?
+  createdAt    DateTime  @default(now())
 
-  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  sessions     TableSession[]
+  room             Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  serviceRequests  ServiceRequest[]
 
-  @@unique([restaurantId, number])
-  @@map("tables")
+  @@index([roomId, isActive])
+  @@map("room_stays")
 }
 
-model TableSession {
-  id             String   @id @default(uuid())
-  tableId        String
-  sessionToken   String   @unique @default(uuid())
-  customerPhone  String?
-  isActive       Boolean  @default(true)
-  expiresAt      DateTime
-  createdAt      DateTime @default(now())
+model ServiceDepartment {
+  id         String      @id @default(uuid())
+  hotelId    String
+  type       ServiceType
+  nameFr     String
+  nameEn     String
+  isActive   Boolean     @default(true)
+  sortOrder  Int         @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
-  table          Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  orders         Order[]
+  hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  serviceItems ServiceItem[]
 
-  @@index([tableId, isActive])
-  @@index([expiresAt])          // for cleanup queries
-  @@map("table_sessions")
+  @@unique([hotelId, type])
+  @@map("service_departments")
 }
 
-model Order {
-  id             String      @id @default(uuid())
-  orderNumber    String      @unique
-  tableSessionId String
-  restaurantId   String
-  status         OrderStatus @default(PENDING)
-  subtotal       Float
-  taxAmount      Float       @default(0)
-  totalAmount    Float
-  notes          String?
-  customerPhone  String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+model ServiceItem {
+  id            String   @id @default(uuid())
+  departmentId  String
+  hotelId       String
+  nameFr        String
+  nameEn        String
+  descriptionFr String?
+  descriptionEn String?
+  price         Float?
+  imageUrl      String?
+  isAvailable   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  tableSession   TableSession @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
-  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  items          OrderItem[]
-  payment        Payment?
+  department     ServiceDepartment    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  hotel          Hotel                @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  requestItems   ServiceRequestItem[]
 
-  @@index([restaurantId, createdAt(sort: Desc)])  // staff kanban — list orders by restaurant
-  @@index([restaurantId, status])                 // filter by status
-  @@index([customerPhone])                        // order history lookup by phone
-  @@map("orders")
+  @@index([hotelId, isAvailable])
+  @@index([departmentId])
+  @@map("service_items")
 }
 
-model OrderItem {
-  id           String   @id @default(uuid())
-  orderId      String
-  menuItemId   String
-  quantity     Int
-  unitPrice    Float
-  itemNameFr   String
-  itemNameEn   String
-  createdAt    DateTime @default(now())
+model ServiceRequest {
+  id            String        @id @default(uuid())
+  requestNumber String        @unique
+  roomStayId    String
+  hotelId       String
+  department    ServiceType
+  status        RequestStatus @default(RECEIVED)
+  subtotal      Float
+  taxAmount     Float         @default(0)
+  totalAmount   Float
+  notes         String?
+  guestPhone    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem     MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  roomStay  RoomStay             @relation(fields: [roomStayId], references: [id], onDelete: Cascade)
+  hotel     Hotel                @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  items     ServiceRequestItem[]
+  payment   Payment?
 
-  @@map("order_items")
+  @@index([hotelId, createdAt(sort: Desc)])
+  @@index([hotelId, status])
+  @@index([hotelId, department])
+  @@map("service_requests")
+}
+
+model ServiceRequestItem {
+  id            String   @id @default(uuid())
+  requestId     String
+  serviceItemId String
+  quantity      Int
+  unitPrice     Float
+  itemNameFr    String
+  itemNameEn    String
+  createdAt     DateTime @default(now())
+
+  request     ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  serviceItem ServiceItem    @relation(fields: [serviceItemId], references: [id], onDelete: Restrict)
+
+  @@map("service_request_items")
 }
 
 model Payment {
   id                  String        @id @default(uuid())
-  orderId             String        @unique
+  requestId           String        @unique
   method              PaymentMethod
   status              PaymentStatus @default(UNPAID)
   amount              Float
@@ -258,7 +275,7 @@ model Payment {
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
-  order               Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  request             ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }

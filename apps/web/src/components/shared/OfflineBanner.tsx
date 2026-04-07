@@ -2,51 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useOnline } from '@/hooks/useOnline';
-import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { useCartStore } from '@/store/cartStore';
 
-/**
- * Global banner shown at the top of every page when the device is offline
- * or when a queued order is pending / being retried.
- *
- * Also mounts `useOfflineSync` so the retry logic runs app-wide without
- * needing an extra provider component.
- */
 export function OfflineBanner() {
-  // Mount the sync hook here so it's always active
-  useOfflineSync();
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  const isOnline      = useOnline();
-  const pendingOrder  = useCartStore((s) => s.pendingOrder);
-  const isSyncing     = useCartStore((s) => s.isSyncing);
+  const isOnline = useOnline();
 
-  // Don't render on server or first client paint — localStorage data would cause hydration mismatch
-  if (!mounted) return null;
-
-  // Nothing to show
-  if (isOnline && !pendingOrder && !isSyncing) return null;
-
-  let message: string;
-  let bg: string;
-
-  if (isSyncing) {
-    message = '⏳ Envoi de votre commande…';
-    bg      = '#C8A96E';
-  } else if (pendingOrder && !isOnline) {
-    message = '📴 Commande en attente — sera envoyée dès le retour du réseau';
-    bg      = '#d4a04a';
-  } else if (pendingOrder && isOnline) {
-    // Online came back but handleOnline hasn't fired yet (race) — reassure user
-    message = '⏳ Envoi de votre commande…';
-    bg      = '#C8A96E';
-  } else {
-    // Simple offline, no pending order
-    message = '⚠️ Pas de connexion internet';
-    bg      = '#888';
-  }
+  if (!mounted || isOnline) return null;
 
   return (
     <div
@@ -56,7 +19,7 @@ export function OfflineBanner() {
         left:       0,
         right:      0,
         zIndex:     100,
-        background: bg,
+        background: '#888',
         padding:    '8px 16px',
         textAlign:  'center',
         fontSize:   13,
@@ -65,7 +28,7 @@ export function OfflineBanner() {
         fontWeight: 500,
       }}
     >
-      {message}
+      ⚠️ Pas de connexion internet
     </div>
   );
 }

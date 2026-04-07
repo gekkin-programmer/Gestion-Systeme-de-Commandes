@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BackButton } from '@/components/shared/BackButton';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { useRestaurantStore } from '@/store/restaurantStore';
+import { useHotelStore } from '@/store/hotelStore';
 import dk from '@/styles/dark.module.css';
 import { THEMES } from '@/hooks/useTheme';
 import type { ThemePreset } from '@repo/shared';
@@ -17,66 +17,63 @@ const THEME_LABELS: Record<ThemePreset, string> = {
 
 export default function AdminSettingsPage() {
   const { user } = useAuth();
-  const restaurantId = user?.restaurantId ?? '';
+  const hotelId = (user as any)?.hotelId ?? '';
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const setBrand = useRestaurantStore((s) => s.setBrand);
+  const setBrand = useHotelStore((s) => s.setBrand);
 
   const [loading, setLoading] = useState(true);
 
-  // Section A — Profile
   const [profileForm, setProfileForm] = useState({ name: '', address: '', city: '' });
   const [savingProfile, setSavingProfile] = useState(false);
   const [savedProfile,  setSavedProfile]  = useState(false);
 
-  // Section B — Logo
   const [logoUrl,        setLogoUrl]        = useState<string | null>(null);
   const [uploadingLogo,  setUploadingLogo]  = useState(false);
   const [logoSuccess,    setLogoSuccess]    = useState(false);
 
-  // Section C — Payment settings + Theme
   const [settingsForm, setSettingsForm] = useState({
     mtnMoneyNumber:    '',
     orangeMoneyNumber: '',
     enableMtnMoney:    true,
     enableOrangeMoney: true,
-    enableCash:        true,
+    enableHotelBill:   true,
     themePreset:       'DARK_GOLD' as ThemePreset,
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [savedSettings,  setSavedSettings]  = useState(false);
 
   useEffect(() => {
-    if (!restaurantId) return;
-    api.get(`/restaurants/${restaurantId}`)
+    if (!hotelId) return;
+    api.get(`/hotels/${hotelId}`)
       .then(({ data }) => {
-        const r = data.data;
-        const s = r.settings;
+        const h = data.data;
+        const s = h.settings;
         setProfileForm({
-          name:    r.name ?? '',
-          address: r.address ?? '',
-          city:    r.city ?? '',
+          name:    h.name ?? '',
+          address: h.address ?? '',
+          city:    h.city ?? '',
         });
-        setLogoUrl(r.logoUrl ?? null);
+        setLogoUrl(h.logoUrl ?? null);
         if (s) {
           setSettingsForm({
             mtnMoneyNumber:    s.mtnMoneyNumber ?? '',
             orangeMoneyNumber: s.orangeMoneyNumber ?? '',
             enableMtnMoney:    s.enableMtnMoney,
             enableOrangeMoney: s.enableOrangeMoney,
-            enableCash:        s.enableCash,
+            enableHotelBill:   s.enableHotelBill,
             themePreset:       (s.themePreset as ThemePreset) ?? 'DARK_GOLD',
           });
         }
       })
       .finally(() => setLoading(false));
-  }, [restaurantId]);
+  }, [hotelId]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingProfile(true);
     setSavedProfile(false);
     try {
-      await api.patch(`/restaurants/${restaurantId}`, profileForm);
+      await api.patch(`/hotels/${hotelId}`, profileForm);
       setBrand({ name: profileForm.name, logoUrl, themePreset: settingsForm.themePreset });
       setSavedProfile(true);
       setTimeout(() => setSavedProfile(false), 3000);
@@ -93,7 +90,7 @@ export default function AdminSettingsPage() {
     try {
       const fd = new FormData();
       fd.append('logo', file);
-      const { data } = await api.post(`/restaurants/${restaurantId}/logo`, fd, {
+      const { data } = await api.post(`/hotels/${hotelId}/logo`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const newLogoUrl = data.data.logoUrl;
@@ -112,7 +109,7 @@ export default function AdminSettingsPage() {
     setSavingSettings(true);
     setSavedSettings(false);
     try {
-      await api.patch(`/restaurants/${restaurantId}/settings`, settingsForm);
+      await api.patch(`/hotels/${hotelId}/settings`, settingsForm);
       setBrand({ name: profileForm.name, logoUrl, themePreset: settingsForm.themePreset });
       setSavedSettings(true);
       setTimeout(() => setSavedSettings(false), 3000);
@@ -120,9 +117,6 @@ export default function AdminSettingsPage() {
       setSavingSettings(false);
     }
   };
-
-  const toggleSetting = (key: 'enableMtnMoney' | 'enableOrangeMoney' | 'enableCash') =>
-    setSettingsForm((p) => ({ ...p, [key]: !p[key] }));
 
   const inputStyle: React.CSSProperties = {
     fontFamily: 'Jost, sans-serif',
@@ -146,11 +140,10 @@ export default function AdminSettingsPage() {
           </p>
         ) : (
           <>
-
             {/* ─── Section A: Profil ─── */}
             <form onSubmit={handleSaveProfile}>
               <div className={dk.card}>
-                <span className={dk.sectionLabel}>Profil du restaurant</span>
+                <span className={dk.sectionLabel}>Profil de l&apos;hôtel</span>
 
                 <div className={dk.inputGroup}>
                   <label className={dk.inputLabel}>Nom</label>
@@ -159,7 +152,7 @@ export default function AdminSettingsPage() {
                     className={dk.input}
                     value={profileForm.name}
                     onChange={(e) => setProfileForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Nom du restaurant"
+                    placeholder="Nom de l'hôtel"
                   />
                 </div>
                 <div className={dk.inputGroup}>
@@ -233,7 +226,6 @@ export default function AdminSettingsPage() {
             {/* ─── Section C: Paiement + Thème ─── */}
             <form onSubmit={handleSaveSettings}>
 
-              {/* Payment */}
               <div className={dk.card}>
                 <span className={dk.sectionLabel}>Modes de paiement</span>
 
@@ -242,7 +234,7 @@ export default function AdminSettingsPage() {
                     <input
                       type="checkbox"
                       checked={settingsForm.enableMtnMoney}
-                      onChange={() => toggleSetting('enableMtnMoney')}
+                      onChange={() => setSettingsForm((p) => ({ ...p, enableMtnMoney: !p.enableMtnMoney }))}
                       style={{ accentColor: 'var(--gold)', width: 16, height: 16 }}
                     />
                     <span style={inputStyle}>MTN Mobile Money</span>
@@ -268,7 +260,7 @@ export default function AdminSettingsPage() {
                     <input
                       type="checkbox"
                       checked={settingsForm.enableOrangeMoney}
-                      onChange={() => toggleSetting('enableOrangeMoney')}
+                      onChange={() => setSettingsForm((p) => ({ ...p, enableOrangeMoney: !p.enableOrangeMoney }))}
                       style={{ accentColor: 'var(--gold)', width: 16, height: 16 }}
                     />
                     <span style={inputStyle}>Orange Money</span>
@@ -292,17 +284,17 @@ export default function AdminSettingsPage() {
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
                   <input
                     type="checkbox"
-                    checked={settingsForm.enableCash}
-                    onChange={() => toggleSetting('enableCash')}
+                    checked={settingsForm.enableHotelBill}
+                    onChange={() => setSettingsForm((p) => ({ ...p, enableHotelBill: !p.enableHotelBill }))}
                     style={{ accentColor: 'var(--gold)', width: 16, height: 16 }}
                   />
-                  <span style={inputStyle}>Espèces (payer à la réception)</span>
+                  <span style={inputStyle}>Facturé sur la chambre (Hotel Bill)</span>
                 </label>
               </div>
 
               {/* Theme */}
               <div className={dk.card}>
-                <span className={dk.sectionLabel}>Thème du menu client</span>
+                <span className={dk.sectionLabel}>Thème de l&apos;app client</span>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
                   {(Object.keys(THEMES) as ThemePreset[]).map((preset) => {
                     const t = THEMES[preset];

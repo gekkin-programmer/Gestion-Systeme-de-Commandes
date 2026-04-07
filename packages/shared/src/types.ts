@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentMethod, PaymentStatus, Role, TableStatus } from './constants';
+import type { PaymentMethod, PaymentStatus, Role, RoomStatus, RoomType, ServiceType, RequestStatus } from './constants';
 
 // ─── User ────────────────────────────────────────────────────────────────────
 
@@ -6,7 +6,8 @@ export interface UserDTO {
   id: string;
   email: string;
   role: Role;
-  restaurantId: string | null;
+  hotelId: string | null;
+  departmentType: ServiceType | null;
   createdAt: string;
 }
 
@@ -15,9 +16,9 @@ export interface AuthTokensDTO {
   user: UserDTO;
 }
 
-// ─── Restaurant ───────────────────────────────────────────────────────────────
+// ─── Hotel ───────────────────────────────────────────────────────────────────
 
-export interface RestaurantDTO {
+export interface HotelDTO {
   id: string;
   name: string;
   slug: string;
@@ -40,86 +41,78 @@ export interface ThemeConfig {
   line:    string;
 }
 
-export interface RestaurantSettingsDTO {
+export interface HotelSettingsDTO {
   id: string;
-  restaurantId: string;
+  hotelId: string;
   mtnMoneyNumber: string | null;
   orangeMoneyNumber: string | null;
   enableMtnMoney: boolean;
   enableOrangeMoney: boolean;
-  enableCash: boolean;
+  enableHotelBill: boolean;
   taxRate: number;
   themePreset: string;
 }
 
-// ─── Category ────────────────────────────────────────────────────────────────
+// ─── Room ─────────────────────────────────────────────────────────────────────
 
-export interface CategoryDTO {
+export interface RoomDTO {
   id: string;
-  restaurantId: string;
-  nameFr: string;
-  nameEn: string;
-  sortOrder: number;
-  isActive: boolean;
+  hotelId: string;
+  roomNumber: number;
+  roomCode: string;
+  floor: number;
+  type: RoomType;
+  status: RoomStatus;
+  qrCodeUrl: string | null;
 }
 
-// ─── MenuItem ────────────────────────────────────────────────────────────────
-
-export interface MenuItemDTO {
+export interface RoomStayDTO {
   id: string;
-  categoryId: string;
-  restaurantId: string;
+  stayToken: string;
+  roomId: string;
+  guestPhone: string | null;
+  isActive: boolean;
+  checkInAt: string;
+  checkOutAt: string | null;
+  room?: RoomDTO;
+}
+
+// ─── Service Department ───────────────────────────────────────────────────────
+
+export interface ServiceDepartmentDTO {
+  id: string;
+  hotelId: string;
+  type: ServiceType;
+  nameFr: string;
+  nameEn: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface ServiceItemDTO {
+  id: string;
+  departmentId: string;
+  hotelId: string;
   nameFr: string;
   nameEn: string;
   descriptionFr: string | null;
   descriptionEn: string | null;
-  price: number;
+  price: number | null;
   imageUrl: string | null;
   isAvailable: boolean;
-  isPopular: boolean;
-  chefName: string | null;
-  cookingTimeMin: number | null;
-  calories: number | null;
-  servings: number | null;
-  proteinG: number | null;
-  carbsG: number | null;
-  fatG: number | null;
 }
 
-export interface MenuDTO {
-  restaurant:  RestaurantDTO;
-  categories:  Array<CategoryDTO & { items: MenuItemDTO[] }>;
-  theme:       ThemePreset;
+export interface ServiceCatalogDTO {
+  hotel: HotelDTO;
+  departments: Array<ServiceDepartmentDTO & { items: ServiceItemDTO[] }>;
+  theme: ThemePreset;
 }
 
-// ─── Table ───────────────────────────────────────────────────────────────────
+// ─── Service Request ──────────────────────────────────────────────────────────
 
-export interface TableDTO {
+export interface ServiceRequestItemDTO {
   id: string;
-  restaurantId: string;
-  number: number;
-  label: string;
-  capacity: number;
-  status: TableStatus;
-  qrToken: string;
-  qrCodeUrl: string | null;
-}
-
-export interface TableSessionDTO {
-  id: string;
-  tableId: string;
-  sessionToken: string;
-  customerPhone: string | null;
-  isActive: boolean;
-  expiresAt: string;
-  table: TableDTO;
-}
-
-// ─── Order ───────────────────────────────────────────────────────────────────
-
-export interface OrderItemDTO {
-  id: string;
-  menuItemId: string;
+  serviceItemId: string;
   quantity: number;
   unitPrice: number;
   itemNameFr: string;
@@ -127,20 +120,21 @@ export interface OrderItemDTO {
   subtotal: number;
 }
 
-export interface OrderDTO {
+export interface ServiceRequestDTO {
   id: string;
-  orderNumber: string;
-  tableSessionId: string;
-  restaurantId: string;
-  status: OrderStatus;
+  requestNumber: string;
+  roomStayId: string;
+  hotelId: string;
+  department: ServiceType;
+  status: RequestStatus;
   subtotal: number;
   taxAmount: number;
   totalAmount: number;
   notes: string | null;
-  customerPhone: string | null;
-  items: OrderItemDTO[];
+  guestPhone: string | null;
+  items: ServiceRequestItemDTO[];
   payment: PaymentDTO | null;
-  tableSession?: { table: { number: number; label: string } } | null;
+  roomStay?: { room: { roomNumber: number; floor: number } } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -149,7 +143,7 @@ export interface OrderDTO {
 
 export interface PaymentDTO {
   id: string;
-  orderId: string;
+  requestId: string;
   method: PaymentMethod;
   status: PaymentStatus;
   amount: number;
@@ -161,13 +155,19 @@ export interface PaymentDTO {
 
 // ─── Stats ───────────────────────────────────────────────────────────────────
 
-export interface DailyStatsDTO {
+export interface HotelDailyStatsDTO {
   date: string;
-  totalOrders: number;
+  totalRequests: number;
   totalRevenue: number;
-  averageOrderValue: number;
-  cancelledOrders: number;
-  topItems: Array<{ name: string; count: number }>;
+  averageRequestValue: number;
+  cancelledRequests: number;
+  byDepartment: DepartmentStatsDTO[];
+}
+
+export interface DepartmentStatsDTO {
+  department: ServiceType;
+  totalRequests: number;
+  totalRevenue: number;
 }
 
 // ─── API responses ───────────────────────────────────────────────────────────

@@ -3,35 +3,24 @@ import { prisma } from '../config/database';
 import { generateReceiptPDF } from '../services/pdf.service';
 
 export async function downloadReceipt(req: Request, res: Response): Promise<void> {
-  const order = await prisma.order.findUnique({
-    where: { id: req.params.orderId },
+  const request = await prisma.serviceRequest.findUnique({
+    where: { id: req.params.requestId },
     include: {
       items: true,
       payment: true,
-      tableSession: { include: { table: true } },
+      roomStay: { include: { room: true } },
+      hotel: true,
     },
   });
 
-  if (!order) {
-    res.status(404).json({ success: false, error: 'Order not found' });
+  if (!request) {
+    res.status(404).json({ success: false, error: 'Request not found' });
     return;
   }
 
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: order.restaurantId },
-  });
-
-  if (!restaurant) {
-    res.status(404).json({ success: false, error: 'Restaurant not found' });
-    return;
-  }
-
-  const pdfBuffer = await generateReceiptPDF(order as any, restaurant);
+  const pdfBuffer = await generateReceiptPDF(request as any, request.hotel);
 
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename="recu-${order.orderNumber}.pdf"`,
-  );
+  res.setHeader('Content-Disposition', `attachment; filename="receipt-${request.requestNumber}.pdf"`);
   res.send(pdfBuffer);
 }

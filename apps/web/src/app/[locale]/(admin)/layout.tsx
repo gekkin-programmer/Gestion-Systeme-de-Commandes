@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { useRestaurantStore } from '@/store/restaurantStore';
+import { useHotelStore } from '@/store/hotelStore';
 import api from '@/lib/api';
 import type { ThemePreset } from '@repo/shared';
 
@@ -11,7 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router   = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuthStore();
-  const setBrand = useRestaurantStore((s) => s.setBrand);
+  const setBrand = useHotelStore((s) => s.setBrand);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
@@ -24,20 +24,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [isAuthenticated, user, router, pathname]);
 
-  // Load restaurant brand so ThemeProvider applies correct theme everywhere
+  // Load hotel brand so ThemeProvider applies correct theme
   useEffect(() => {
-    if (!user?.restaurantId) return;
-    api.get(`/restaurants/${user.restaurantId}`)
+    const hotelId = (user as any)?.hotelId;
+    if (!hotelId) return;
+    api.get(`/hotels/${hotelId}`)
       .then(({ data }) => {
-        const r = data.data;
+        const h = data.data;
         setBrand({
-          name:        r.name ?? '',
-          logoUrl:     r.logoUrl ?? null,
-          themePreset: (r.settings?.themePreset as ThemePreset) ?? 'DARK_GOLD',
+          name:        h.name ?? '',
+          logoUrl:     h.logoUrl ?? null,
+          themePreset: (h.settings?.themePreset as ThemePreset) ?? 'DARK_GOLD',
         });
       })
       .catch(() => {});
-  }, [user?.restaurantId, setBrand]);
+  }, [(user as any)?.hotelId, setBrand]);
 
   if (!checked) return null;
   return <>{children}</>;

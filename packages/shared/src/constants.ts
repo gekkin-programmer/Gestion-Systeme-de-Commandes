@@ -1,13 +1,39 @@
-export const ORDER_STATUS = {
-  PENDING: 'PENDING',
-  CONFIRMED: 'CONFIRMED',
-  PREPARING: 'PREPARING',
-  READY: 'READY',
-  SERVED: 'SERVED',
+export const REQUEST_STATUS = {
+  RECEIVED: 'RECEIVED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  DELIVERED: 'DELIVERED',
   CANCELLED: 'CANCELLED',
 } as const;
 
-export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
+export type RequestStatus = (typeof REQUEST_STATUS)[keyof typeof REQUEST_STATUS];
+
+export const SERVICE_TYPE = {
+  ROOM_SERVICE: 'ROOM_SERVICE',
+  HOUSEKEEPING: 'HOUSEKEEPING',
+  CONCIERGE: 'CONCIERGE',
+  SPA: 'SPA',
+} as const;
+
+export type ServiceType = (typeof SERVICE_TYPE)[keyof typeof SERVICE_TYPE];
+
+export const ROOM_STATUS = {
+  AVAILABLE: 'AVAILABLE',
+  OCCUPIED: 'OCCUPIED',
+  MAINTENANCE: 'MAINTENANCE',
+} as const;
+
+export type RoomStatus = (typeof ROOM_STATUS)[keyof typeof ROOM_STATUS];
+
+export const ROOM_TYPE = {
+  SINGLE: 'SINGLE',
+  DOUBLE: 'DOUBLE',
+  SUITE: 'SUITE',
+  DELUXE: 'DELUXE',
+  PENTHOUSE: 'PENTHOUSE',
+} as const;
+
+export type RoomType = (typeof ROOM_TYPE)[keyof typeof ROOM_TYPE];
 
 export const PAYMENT_STATUS = {
   UNPAID: 'UNPAID',
@@ -20,9 +46,9 @@ export const PAYMENT_STATUS = {
 export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];
 
 export const PAYMENT_METHOD = {
-  CASH: 'CASH',
   MTN_MOBILE_MONEY: 'MTN_MOBILE_MONEY',
   ORANGE_MONEY: 'ORANGE_MONEY',
+  HOTEL_BILL: 'HOTEL_BILL',
 } as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD];
@@ -31,34 +57,25 @@ export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   STAFF: 'STAFF',
-  CUSTOMER: 'CUSTOMER',
 } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
-export const TABLE_STATUS = {
-  AVAILABLE: 'AVAILABLE',
-  OCCUPIED: 'OCCUPIED',
-  RESERVED: 'RESERVED',
-  MAINTENANCE: 'MAINTENANCE',
-} as const;
-
-export type TableStatus = (typeof TABLE_STATUS)[keyof typeof TABLE_STATUS];
-
 export const SOCKET_EVENTS = {
   // Server → Client
-  ORDER_NEW: 'order:new',
-  ORDER_STATUS_CHANGED: 'order:status_changed',
-  ORDER_CANCELLED: 'order:cancelled',
+  REQUEST_NEW: 'request:new',
+  REQUEST_STATUS_CHANGED: 'request:status_changed',
+  REQUEST_CANCELLED: 'request:cancelled',
   PAYMENT_STATUS_CHANGED: 'payment:status_changed',
-  MENU_ITEM_AVAILABILITY_CHANGED: 'menu:item_availability_changed',
-  SESSION_CLOSED: 'session:closed',
-  TABLE_STATUS_CHANGED: 'table:status_changed',
+  SERVICE_ITEM_AVAILABILITY_CHANGED: 'service:item_availability_changed',
+  ROOM_STATUS_CHANGED: 'room:status_changed',
+  STAY_CLOSED: 'stay:closed',
   // Client → Server
-  JOIN_RESTAURANT: 'join:restaurant',
-  JOIN_SESSION: 'join:session',
+  JOIN_HOTEL: 'join:hotel',
+  JOIN_DEPARTMENT: 'join:department',
+  JOIN_STAY: 'join:stay',
 } as const;
 
 export const DEFAULT_CURRENCY = 'XAF';
-export const TABLE_SESSION_TTL_HOURS = 4;
-export const ORDER_NUMBER_PREFIX = 'CMD';
+export const REQUEST_NUMBER_PREFIX = 'REQ';
+export const ROOM_CODE_LENGTH = 6;

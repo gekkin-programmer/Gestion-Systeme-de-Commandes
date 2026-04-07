@@ -1,132 +1,134 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { OrderKanbanBoard } from '@/components/staff/OrderKanbanBoard';
+import { RequestKanbanBoard } from '@/components/staff/RequestKanbanBoard';
 import { Toast } from '@/components/shared/Toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useOrders, useSyncStatusQueue } from '@/hooks/useOrders';
-import { useRestaurantSocket } from '@/hooks/useSocket';
+import { useRequests, useSyncRequestQueue } from '@/hooks/useRequests';
+import { useHotelSocket } from '@/hooks/useSocket';
 import { useNotification } from '@/hooks/useNotification';
 import dk from '@/styles/dark.module.css';
-import type { OrderDTO } from '@/types';
+import type { ServiceRequestDTO } from '@/types';
 
-export default function StaffOrdersPage() {
-  const t = useTranslations();
+const DEPT_OPTIONS = [
+  { value: '',             label: 'Tous les départements' },
+  { value: 'ROOM_SERVICE', label: 'Room Service' },
+  { value: 'HOUSEKEEPING', label: 'Ménage' },
+  { value: 'CONCIERGE',    label: 'Conciergerie' },
+  { value: 'SPA',          label: 'Spa' },
+];
+
+export default function StaffRequestsPage() {
   const { user, accessToken, logout } = useAuth();
-  const restaurantId = user?.restaurantId ?? '';
+  const hotelId       = (user as any)?.hotelId ?? '';
+  const userDept      = (user as any)?.departmentType ?? null;
 
-  const { orders, loading, fetchOrders, updateOrderStatus, addOrder, setOrders, pendingIds } = useOrders(restaurantId);
-  useSyncStatusQueue(updateOrderStatus);
+  // Staff with assigned dept are locked to it; all-dept staff can filter
+  const [deptFilter, setDeptFilter] = useState<string>(userDept ?? '');
+
+  const { requests, loading, fetchRequests, updateRequestStatus, addRequest, setRequests, pendingIds } =
+    useRequests(hotelId, deptFilter || undefined);
+  useSyncRequestQueue(updateRequestStatus);
   const { playNewOrderSound, showBrowserNotification } = useNotification();
-  const [servedToast, setServedToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  useRestaurantSocket(accessToken, {
-    onOrderNew: (order: unknown) => {
-      const o = order as OrderDTO;
-      addOrder(o);
-      playNewOrderSound();
-      showBrowserNotification(t('staff.newOrder'), `Commande ${o.orderNumber}`);
+  // Staff joined to their dept socket automatically via useHotelSocket
+  useHotelSocket(accessToken, userDept, {
+    onRequestNew: (r: unknown) => {
+      const req = r as ServiceRequestDTO;
+      // Only show if matches current filter
+      if (!deptFilter || req.department === deptFilter) {
+        addRequest(req);
+        playNewOrderSound();
+        showBrowserNotification('Nouvelle demande', `${req.requestNumber} — ${req.department}`);
+      }
     },
-    onOrderStatusChanged: (updated: unknown) => {
-      const o = updated as OrderDTO;
-      setOrders((prev) => prev.map((x) => x.id === o.id ? o : x));
-      if (o.status === 'SERVED') {
-        const table = o.tableSession?.table;
-        const label = table ? ` — ${table.label || `Table ${table.number}`}` : '';
-        setServedToast(`${o.orderNumber}${label} — récupérée ✓`);
+    onRequestStatusChanged: (updated: unknown) => {
+      const r = updated as ServiceRequestDTO;
+      setRequests((prev) => prev.map((x) => x.id === r.id ? r : x));
+      if (r.status === 'DELIVERED') {
+        const room = (r as any).roomStay?.room;
+        const label = room ? ` — Chambre ${room.roomNumber}` : '';
+        setToast(`${r.requestNumber}${label} — livrée ✓`);
       }
     },
   });
 
   useEffect(() => {
-    if (restaurantId) fetchOrders();
-  }, [restaurantId]);
+    if (hotelId) fetchRequests();
+  }, [hotelId, deptFilter]);
 
-  if (!user?.restaurantId) {
+  if (!hotelId) {
     return (
-      <div
-        className={dk.page}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
+      <div className={dk.page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p className={dk.errorText}>Accès non autorisé</p>
       </div>
     );
   }
 
-  const activeOrders = orders.filter((o) => !['SERVED', 'CANCELLED'].includes(o.status));
+  const activeRequests = requests.filter((r) => !['DELIVERED', 'CANCELLED'].includes(r.status));
+
+  const selectStyle: React.CSSProperties = {
+    background: 'var(--surface)',
+    border: '1px solid var(--line)',
+    color: 'var(--cream)',
+    fontFamily: 'Jost, sans-serif',
+    fontSize: 11,
+    padding: '5px 10px',
+    cursor: 'pointer',
+    outline: 'none',
+  };
 
   return (
     <div className={dk.page} style={{ minHeight: '100vh' }}>
 
-      {servedToast && (
-        <Toast
-          message={servedToast}
-          color="#4ade80"
-          duration={5000}
-          onClose={() => setServedToast(null)}
-        />
+      {toast && (
+        <Toast message={toast} color="#4ade80" duration={5000} onClose={() => setToast(null)} />
       )}
 
-      {/* Header */}
       <header className={dk.header} style={{ height: 64 }}>
         <div style={{ flex: 1 }}>
-          <span
-            className={dk.playfair}
-            style={{ fontSize: 17, color: 'var(--cream)', display: 'block', lineHeight: 1.2 }}
-          >
-            {t('staff.title')}
+          <span className={dk.playfair} style={{ fontSize: 17, color: 'var(--cream)', display: 'block', lineHeight: 1.2 }}>
+            Demandes
           </span>
-          <span
-            style={{
-              fontFamily: 'Jost, sans-serif',
-              fontSize: 10,
-              color: 'var(--cream-dim)',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {user.email}
+          <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 10, color: 'var(--cream-dim)', letterSpacing: '0.05em' }}>
+            {user?.email}
           </span>
         </div>
 
         <div className={dk.headerRight}>
-          {/* Active count chip */}
-          <span
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              fontSize: 13,
-              color: 'var(--gold)',
-              border: '1px solid var(--line)',
-              padding: '3px 10px',
-            }}
-          >
-            {activeOrders.length} active{activeOrders.length !== 1 ? 's' : ''}
+          {/* Dept filter — only shown for all-dept staff */}
+          {!userDept && (
+            <select style={selectStyle} value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
+              {DEPT_OPTIONS.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+          )}
+
+          <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 13, color: 'var(--gold)', border: '1px solid var(--line)', padding: '3px 10px' }}>
+            {activeRequests.length} active{activeRequests.length !== 1 ? 's' : ''}
           </span>
 
-          {/* Logout */}
-          <button
-            className={dk.backBtn}
-            onClick={logout}
-            style={{ marginLeft: 4 }}
-          >
+          <button className={dk.backBtn} onClick={logout} style={{ marginLeft: 4 }}>
             Déconnexion
           </button>
         </div>
       </header>
 
-      {/* Kanban */}
-      <main style={{ padding: '24px 20px 40px', maxWidth: 1100, margin: '0 auto' }}>
+      <main style={{ padding: '24px 20px 40px', maxWidth: 1200, margin: '0 auto' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
             <span className={dk.playfair} style={{ fontSize: 18, color: 'var(--cream-dim)' }}>
-              Chargement des commandes…
+              Chargement des demandes…
             </span>
           </div>
         ) : (
-          <OrderKanbanBoard
-            orders={activeOrders}
-            onStatusChange={async (id, status) => { await updateOrderStatus(id, status); }}
+          <RequestKanbanBoard
+            requests={activeRequests}
+            onStatusChange={async (id, status) => { await updateRequestStatus(id, status); }}
             pendingIds={pendingIds}
+            showDept={!deptFilter}
           />
         )}
       </main>

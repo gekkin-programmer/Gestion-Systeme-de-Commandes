@@ -1,6 +1,6 @@
 'use client';
 import type React from 'react';
-import { useRestaurantStore } from '@/store/restaurantStore';
+import { useHotelStore } from '@/store/hotelStore';
 import type { ThemePreset, ThemeConfig } from '@repo/shared';
 
 export const THEMES: Record<ThemePreset, ThemeConfig> = {
@@ -31,7 +31,7 @@ export const THEMES: Record<ThemePreset, ThemeConfig> = {
 };
 
 export function useTheme(): React.CSSProperties {
-  const preset = useRestaurantStore((s) => s.themePreset);
+  const preset = useHotelStore((s) => s.themePreset);
   const t = THEMES[preset ?? 'DARK_GOLD'];
   return {
     '--gold':      t.gold,
